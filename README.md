@@ -27,9 +27,13 @@ Provisioned Railway project:
 
 PostgreSQL, Redis, the storage bucket, the HTTPS domain, and all application variable references are configured. Both application services deploy from this repository's `main` branch.
 
-## Workspace branding
+## Product branding
 
-After creating the first administrator, set the workspace name to **CRM by Elivate** under **Settings → General** and upload `assets/elivate-icon-transparent.png` as the workspace picture.
+The server image applies the **CRM by Elivate** identity at build time to the first-workspace sign-in screen, browser metadata, favicon, and install manifest. The overlay is intentionally narrow: it preserves Twenty's authentication layout and behavior while replacing its public entry-point branding.
+
+After creating the first administrator, also set the workspace name to **CRM by Elivate** under **Settings → General** and upload `assets/elivate-icon-transparent.png` as the workspace picture. Twenty stores this workspace-level branding separately from the pre-login assets.
+
+`scripts/apply-branding.mjs` fails the server build if a pinned Twenty upgrade removes the expected onboarding text or metadata. Review and update the overlay whenever either Dockerfile is moved to a new Twenty release.
 
 ## Run locally
 
