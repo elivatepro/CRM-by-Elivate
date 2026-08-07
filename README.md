@@ -1,6 +1,6 @@
 # CRM by Elivate
 
-Self-hosted [Twenty CRM](https://twenty.com/) deployment prepared for GitHub-to-Railway delivery.
+Self-hosted **CRM by Elivate**, powered by [Twenty](https://twenty.com/), prepared for GitHub-to-Railway delivery.
 
 ## Pinned release
 
@@ -25,7 +25,11 @@ Provisioned Railway project:
 - Environment: `production`
 - Temporary HTTPS URL: <https://twenty-server-production-9d4c.up.railway.app>
 
-PostgreSQL, Redis, the storage bucket, the HTTPS domain, and all application variable references are already configured. The two application services intentionally have no source yet; they will deploy only after the repository owner pushes this folder and connects the resulting GitHub repository.
+PostgreSQL, Redis, the storage bucket, the HTTPS domain, and all application variable references are configured. Both application services deploy from this repository's `main` branch.
+
+## Workspace branding
+
+After creating the first administrator, set the workspace name to **CRM by Elivate** under **Settings → General** and upload `assets/elivate-icon-transparent.png` as the workspace picture.
 
 ## Run locally
 
