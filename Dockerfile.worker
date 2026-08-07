@@ -1,0 +1,3 @@
+FROM twentycrm/twenty:v2.27.0
+
+CMD ["yarn", "worker:prod"]
