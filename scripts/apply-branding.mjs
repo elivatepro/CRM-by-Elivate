@@ -4,6 +4,9 @@ import path from 'node:path';
 const frontRoot =
   process.env.TWENTY_FRONT_ROOT ??
   '/app/packages/twenty-server/dist/front';
+const serverDistRoot =
+  process.env.TWENTY_SERVER_DIST_ROOT ??
+  '/app/packages/twenty-server/dist';
 
 const productName = 'CRM by Elivate';
 const productDescription =
@@ -51,7 +54,7 @@ const patchIndex = async () => {
   for (const [from, to] of replacements) {
     const result = replaceAllWithCount(index, from, to);
 
-    if (result.count === 0) {
+    if (result.count === 0 && !index.includes(to)) {
       throw new Error(`Expected index metadata was not found: ${from}`);
     }
 
@@ -62,7 +65,7 @@ const patchIndex = async () => {
     /\s*<meta\s+(?:property="og:image"|name="twitter:image")[\s\S]*?\/>/g;
   const socialImageMatches = index.match(socialImagePattern) ?? [];
 
-  if (socialImageMatches.length !== 2) {
+  if (![0, 2].includes(socialImageMatches.length)) {
     throw new Error(
       `Expected two Twenty social image tags, found ${socialImageMatches.length}.`,
     );
@@ -108,6 +111,7 @@ const patchFrontendBundles = async () => {
     ['Page Not Found | Twenty', `Page Not Found | ${productName}`],
   ];
   const counts = new Map(replacements.map(([from]) => [from, 0]));
+  const brandedBundleNames = new Set();
 
   for (const assetPath of assetFiles) {
     let asset = await readFile(assetPath, 'utf8');
@@ -126,9 +130,20 @@ const patchFrontendBundles = async () => {
     if (changed) {
       await writeFile(assetPath, asset);
     }
+
+    if (
+      changed ||
+      asset.includes(`Welcome to ${productName}`) ||
+      asset.includes(`Page Not Found | ${productName}`)
+    ) {
+      brandedBundleNames.add(path.basename(assetPath));
+    }
   }
 
-  if (counts.get('Welcome to your workspace') === 0) {
+  if (
+    counts.get('Welcome to your workspace') === 0 &&
+    brandedBundleNames.size === 0
+  ) {
     throw new Error(
       'Twenty onboarding heading was not found. Review the branding patch before upgrading the base image.',
     );
@@ -140,8 +155,53 @@ const patchFrontendBundles = async () => {
       0,
     )} frontend bundle strings.`,
   );
+
+  return [...brandedBundleNames].sort();
+};
+
+const patchStaticAssetCaching = async (brandedBundleNames) => {
+  const appModulePath = path.join(serverDistRoot, 'app.module.js');
+  let appModule = await readFile(appModulePath, 'utf8');
+  const immutableCacheHeader =
+    'public, max-age=31536000, immutable';
+
+  if (appModule.includes(immutableCacheHeader)) {
+    return;
+  }
+
+  const originalStaticModule = `_servestatic.ServeStaticModule.forRoot({
+                rootPath: frontPath
+            })`;
+  const brandedBundleSet = JSON.stringify(brandedBundleNames);
+  const cachedStaticModule = `_servestatic.ServeStaticModule.forRoot({
+                rootPath: frontPath,
+                serveStaticOptions: {
+                    setHeaders: (response, filePath) => {
+                        const assetPathSegment = _path.sep + 'assets' + _path.sep;
+                        const isHashedAsset = filePath.includes(assetPathSegment) && /-[A-Za-z0-9_-]{8,}\\.[A-Za-z0-9]+$/.test(filePath);
+                        if (!isHashedAsset) return;
+                        const brandedBundles = new Set(${brandedBundleSet});
+                        response.setHeader('Cache-Control', brandedBundles.has(_path.basename(filePath)) ? 'public, max-age=3600' : '${immutableCacheHeader}');
+                    }
+                }
+            })`;
+  const result = replaceAllWithCount(
+    appModule,
+    originalStaticModule,
+    cachedStaticModule,
+  );
+
+  if (result.count !== 1) {
+    throw new Error(
+      `Expected one Twenty static module configuration, found ${result.count}. Review the cache patch before upgrading the base image.`,
+    );
+  }
+
+  appModule = result.content;
+  await writeFile(appModulePath, appModule);
 };
 
 await patchIndex();
 await patchManifest();
-await patchFrontendBundles();
+const brandedBundleNames = await patchFrontendBundles();
+await patchStaticAssetCaching(brandedBundleNames);

@@ -35,6 +35,12 @@ After creating the first administrator, also set the workspace name to **CRM by 
 
 `scripts/apply-branding.mjs` fails the server build if a pinned Twenty upgrade removes the expected onboarding text or metadata. Review and update the overlay whenever either Dockerfile is moved to a new Twenty release.
 
+## Frontend caching
+
+The same build overlay gives content-hashed files under `/assets/` a one-year immutable browser cache so authenticated navigation does not repeatedly revalidate hundreds of unchanged frontend chunks. Bundles modified by the branding overlay receive a one-hour cache because their upstream filenames no longer represent their final content exactly.
+
+HTML, runtime configuration, APIs, authentication, and user-file routes retain Twenty's original dynamic cache behavior. Railway CDN caching remains disabled until browser-cache behavior is verified on the deployed application.
+
 ## Run locally
 
 1. Copy `.env.example` to `.env`.
