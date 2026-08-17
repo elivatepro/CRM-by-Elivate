@@ -49,6 +49,25 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  intake:
+    build:
+      context: .
+      dockerfile: Dockerfile.intake
+    ports:
+      - "4000:4000"
+    environment:
+      PORT: 4000
+      TWENTY_API_URL: http://server:3000
+      TWENTY_API_KEY: ${TWENTY_API_KEY}
+      TWENTY_TEAM_OBJECT: ${TWENTY_TEAM_OBJECT:-teams}
+      TWENTY_TEAM_NAME_FIELD: ${TWENTY_TEAM_NAME_FIELD:-name}
+      TWENTY_PERSON_OBJECT: ${TWENTY_PERSON_OBJECT:-people}
+      TWENTY_OPPORTUNITY_OBJECT: ${TWENTY_OPPORTUNITY_OBJECT:-opportunities}
+    depends_on:
+      server:
+        condition: service_healthy
+    restart: unless-stopped
+
   postgres:
     image: postgres:16
     environment:
