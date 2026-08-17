@@ -393,7 +393,7 @@ const uploadAttachment = async (dataUrl, filename, personId) => {
   const filePath = uploaded?.data?.uploadFilesFieldFile?.path;
   if (!filePath) {
     console.error('[intake] file upload failed', JSON.stringify(uploaded).slice(0, 300));
-    return;
+    return null;
   }
 
   await twentyRequest('attachments', {
@@ -404,6 +404,8 @@ const uploadAttachment = async (dataUrl, filename, personId) => {
       targetPersonId: personId,
     }),
   });
+
+  return filePath;
 };
 
 const registerMember = async (body) => {
@@ -508,8 +510,22 @@ const registerMember = async (body) => {
   if (personId) {
     try {
       await uploadAttachment(body.signature, `signature-${lastName}.png`, personId);
+
       if (body.photo) {
-        await uploadAttachment(body.photo, `photo-${lastName}.jpg`, personId);
+        const photoPath = await uploadAttachment(
+          body.photo,
+          `photo-${lastName}.jpg`,
+          personId,
+        );
+
+        // The same photo becomes the member's avatar, so the roster shows
+        // faces rather than initials.
+        if (photoPath) {
+          await twentyRequest(`${encodeURIComponent(personObject)}/${personId}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ avatarUrl: photoPath }),
+          });
+        }
       }
     } catch (error) {
       console.error('[intake] attachment step failed:', error.message);
