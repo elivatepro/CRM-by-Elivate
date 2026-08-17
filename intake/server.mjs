@@ -69,7 +69,13 @@ const sendJson = (response, status, body) => {
   response.end(JSON.stringify(body));
 };
 
-const readJsonBody = (request) =>
+// Text-only submissions are tiny. A member registration also carries a drawn
+// signature and a downscaled photo, so it needs room for roughly a megabyte of
+// image data; anything beyond that is not a form submission.
+const TEXT_BODY_LIMIT = 64_000;
+const MEDIA_BODY_LIMIT = 12_000_000;
+
+const readJsonBody = (request, limit = TEXT_BODY_LIMIT) =>
   new Promise((resolve, reject) => {
     let raw = '';
     let aborted = false;
@@ -77,9 +83,9 @@ const readJsonBody = (request) =>
     request.on('data', (chunk) => {
       if (aborted) return;
       raw += chunk;
-      // Intake payloads are small; refuse anything that is not. Stop reading
-      // but let the caller answer with a real status instead of a reset socket.
-      if (raw.length > 64_000) {
+      // Stop reading, but let the caller answer with a real status instead of
+      // a reset socket.
+      if (raw.length > limit) {
         aborted = true;
         request.pause();
         reject(Object.assign(new Error('Payload too large'), { statusCode: 413 }));
@@ -669,7 +675,7 @@ const routes = {
   'POST /api/members': async (request, response) => {
     let body;
     try {
-      body = await readJsonBody(request);
+      body = await readJsonBody(request, MEDIA_BODY_LIMIT);
     } catch (error) {
       return sendJson(response, error.statusCode ?? 400, {
         error: error.statusCode === 413 ? 'Request too large.' : 'Invalid request.',
@@ -685,6 +691,7 @@ const routes = {
       // it: the member needs it to submit orders.
       sendJson(response, 201, { ok: true, memberId: result.memberId });
     } catch (error) {
+      console.error('[intake] member registration failed:', error.message, '| cause:', error.cause?.message || error.cause?.code || 'none');
       sendJson(response, error.statusCode ?? 502, {
         error: 'Could not complete your registration. Please try again.',
       });

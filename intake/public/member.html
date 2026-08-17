@@ -548,13 +548,22 @@
       // Downscale before upload: phone photos are far larger than needed.
       const img = new Image();
       img.addEventListener('load', () => {
-        const max = 900;
+        // A profile photo is displayed small, and members submit over mobile
+        // data, so the image is reduced until it is comfortably under the
+        // request limit rather than sent at camera resolution.
+        const max = 700;
         const scale = Math.min(1, max / Math.max(img.width, img.height));
         const canvas = document.createElement('canvas');
         canvas.width = Math.round(img.width * scale);
         canvas.height = Math.round(img.height * scale);
         canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-        photoDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+
+        let quality = 0.82;
+        photoDataUrl = canvas.toDataURL('image/jpeg', quality);
+        while (photoDataUrl.length > 1_200_000 && quality > 0.4) {
+          quality -= 0.12;
+          photoDataUrl = canvas.toDataURL('image/jpeg', quality);
+        }
         photoPreview.src = photoDataUrl;
         uploadBox.dataset.hasFile = 'true';
         uploadLabel.textContent = 'Photo selected — tap to change';
@@ -755,7 +764,13 @@
           for (const [field, message] of Object.entries(data.errors)) setError(field, message);
           throw new Error('validation');
         }
-        throw new Error('failed');
+        // Say what actually went wrong: blaming the connection sends people
+        // to re-enter a form that was received and rejected.
+        throw new Error(
+          response.status === 413
+            ? 'Your photo is too large to send. Go back and choose a smaller one.'
+            : data.error || 'failed',
+        );
       }
 
       const result = await response.json().catch(() => ({}));
@@ -794,7 +809,10 @@
         statusEl.textContent = 'Some answers need attention. Please check the earlier steps.';
       } else {
         statusEl.dataset.kind = 'error';
-        statusEl.textContent = 'Could not submit your registration. Check your connection and try again.';
+        statusEl.textContent =
+          error.message && error.message !== 'failed'
+            ? error.message
+            : 'Could not submit your registration. Please try again.';
       }
       submitBtn.disabled = false;
       submitBtn.textContent = 'Submit';
