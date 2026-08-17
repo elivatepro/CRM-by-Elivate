@@ -170,10 +170,32 @@
 
   input::placeholder { color: var(--ink-faint); }
 
-  input:focus-visible, button:focus-visible, .select-trigger:focus-visible {
+  /* Focus is shown by the field's own edge lifting, not by a detached ring
+     floating around it. Keyboard users still get a clear, visible state. */
+  input:focus, .select-trigger:focus {
+    outline: none;
+    border-color: var(--field-line-hover);
+    background: var(--surface);
+  }
+
+  input:focus-visible, .select-trigger:focus-visible {
+    outline: none;
+    border-color: var(--brand);
+  }
+
+  button:focus-visible {
     outline: 2px solid var(--brand);
     outline-offset: 2px;
-    border-color: var(--brand);
+  }
+
+  /* Browser autofill repaints the field with its own colours; keep ours. */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--ink);
+    -webkit-box-shadow: 0 0 0 1000px var(--field-fill) inset;
+    caret-color: var(--ink);
+    transition: background-color 9999s ease-out;
   }
 
   input[aria-invalid="true"], .select-trigger[aria-invalid="true"] {
@@ -296,8 +318,7 @@
   .phone-row:hover { border-color: var(--field-line-hover); }
 
   .phone-row:focus-within {
-    outline: 2px solid var(--brand);
-    outline-offset: 2px;
+    outline: none;
     border-color: var(--brand);
   }
 
@@ -488,9 +509,14 @@ textarea {
 textarea:hover { border-color: var(--field-line-hover); }
 textarea::placeholder { color: var(--ink-faint); }
 
+textarea:focus {
+  outline: none;
+  border-color: var(--field-line-hover);
+  background: var(--surface);
+}
+
 textarea:focus-visible {
-  outline: 2px solid var(--brand);
-  outline-offset: 2px;
+  outline: none;
   border-color: var(--brand);
 }
 
@@ -539,8 +565,8 @@ textarea[aria-invalid="true"] { border-color: var(--danger); }
 }
 
 .choice input:focus-visible + span {
-  outline: 2px solid var(--brand);
-  outline-offset: 2px;
+  outline: none;
+  border-color: var(--brand);
 }
 
 /* Terms list */
@@ -574,7 +600,7 @@ textarea[aria-invalid="true"] { border-color: var(--danger); }
 
 .term:has(input:checked) { border-color: var(--brand); }
 .term:has(input:checked) span { color: var(--ink); }
-.term:has(input:focus-visible) { outline: 2px solid var(--brand); outline-offset: 2px; }
+.term:has(input:focus-visible) { border-color: var(--brand); }
 
 /* Photo upload */
 .upload {
