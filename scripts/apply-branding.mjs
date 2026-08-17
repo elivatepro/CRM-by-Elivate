@@ -1,4 +1,4 @@
-import { readdir, readFile, writeFile } from 'node:fs/promises';
+import { copyFile, readdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 const frontRoot =
@@ -8,9 +8,9 @@ const serverDistRoot =
   process.env.TWENTY_SERVER_DIST_ROOT ??
   '/app/packages/twenty-server/dist';
 
-const productName = 'CRM by Elivate';
+const productName = 'Elivate Network';
 const productDescription =
-  "Elivate's internal customer relationship management workspace.";
+  'Elivate Network customer relationship workspace.';
 
 const replaceAllWithCount = (content, from, to) => {
   const count = content.split(from).length - 1;
@@ -44,7 +44,9 @@ const patchIndex = async () => {
 
   const replacements = [
     ['<title>Twenty</title>', `<title>${productName}</title>`],
+    ['<title>CRM by Elivate</title>', `<title>${productName}</title>`],
     ['content="Twenty"', `content="${productName}"`],
+    ['content="CRM by Elivate"', `content="${productName}"`],
     [
       'content="A modern open-source CRM"',
       `content="${productDescription}"`,
@@ -80,7 +82,7 @@ const patchManifest = async () => {
   const manifestPath = path.join(frontRoot, 'manifest.json');
   const manifest = JSON.parse(await readFile(manifestPath, 'utf8'));
 
-  manifest.short_name = 'Elivate CRM';
+  manifest.short_name = 'Elivate Network';
   manifest.name = productName;
   manifest.icons = [
     {
@@ -108,7 +110,9 @@ const patchFrontendBundles = async () => {
   const replacements = [
     ['Welcome to your workspace', `Welcome to ${productName}`],
     ['Welcome to Twenty', `Welcome to ${productName}`],
+    ['Welcome to CRM by Elivate', `Welcome to ${productName}`],
     ['Page Not Found | Twenty', `Page Not Found | ${productName}`],
+    ['Page Not Found | CRM by Elivate', `Page Not Found | ${productName}`],
   ];
   const counts = new Map(replacements.map(([from]) => [from, 0]));
   const brandedBundleNames = new Set();
@@ -201,7 +205,22 @@ const patchStaticAssetCaching = async (brandedBundleNames) => {
   await writeFile(appModulePath, appModule);
 };
 
+const patchFavicon = async () => {
+  // Twenty ships its own favicon.ico, which the icon directory copy does not
+  // replace, so the browser tab keeps the upstream mark until this overwrites it.
+  const source = '/tmp/brand/favicon.ico';
+  const target = path.join(frontRoot, 'favicon.ico');
+
+  try {
+    await copyFile(source, target);
+    console.log('Applied Elivate Network favicon.');
+  } catch (error) {
+    throw new Error(`Could not apply favicon: ${error.message}`);
+  }
+};
+
 await patchIndex();
+await patchFavicon();
 await patchManifest();
 const brandedBundleNames = await patchFrontendBundles();
 await patchStaticAssetCaching(brandedBundleNames);
