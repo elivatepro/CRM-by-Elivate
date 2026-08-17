@@ -715,6 +715,47 @@ const routes = {
   },
 };
 
+// Twenty only signs avatar URLs for its own core-picture folder, and that
+// folder rejects API uploads, so a member photo cannot be attached as an
+// avatar through the API. The photos are stored on disk here instead and
+// served directly, which keeps the avatar URL stable and free of expiring
+// tokens.
+const avatarRoot = path.join(here, 'avatars');
+
+const AVATAR_TYPES = {
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.png': 'image/png',
+  '.webp': 'image/webp',
+};
+
+const serveAvatar = async (name, response) => {
+  // The name comes from a URL, so it must not be able to escape the folder.
+  if (!/^[A-Za-z0-9._-]+$/.test(name) || name.includes('..')) {
+    response.writeHead(400, { 'Content-Type': 'text/plain' });
+    return response.end('Bad request');
+  }
+
+  const type = AVATAR_TYPES[path.extname(name).toLowerCase()];
+  if (!type) {
+    response.writeHead(404, { 'Content-Type': 'text/plain' });
+    return response.end('Not found');
+  }
+
+  try {
+    const body = await readFile(path.join(avatarRoot, name));
+    response.writeHead(200, {
+      'Content-Type': type,
+      'Cache-Control': 'public, max-age=604800',
+      'X-Content-Type-Options': 'nosniff',
+    });
+    response.end(body);
+  } catch {
+    response.writeHead(404, { 'Content-Type': 'text/plain' });
+    response.end('Not found');
+  }
+};
+
 const staticFiles = {
   '/': { file: 'index.html', type: 'text/html; charset=utf-8' },
   '/prospect': { file: 'prospect.html', type: 'text/html; charset=utf-8' },
@@ -749,6 +790,10 @@ const server = createServer(async (request, response) => {
   const route = routes[`${request.method} ${url.pathname}`];
 
   if (route) return route(request, response);
+
+  if (request.method === 'GET' && url.pathname.startsWith('/avatar/')) {
+    return serveAvatar(decodeURIComponent(url.pathname.slice('/avatar/'.length)), response);
+  }
 
   if (request.method === 'GET' || request.method === 'HEAD') {
     const entry = staticFiles[url.pathname];
