@@ -1,0 +1,548 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>New Prospect · CRM by Elivate</title>
+<link rel="icon" href="/elivate-mark.png" />
+<style>
+  :root {
+    --brand: #FF7F4F;
+    --brand-ink: #C4451A;
+    --ground: #FAF8F7;
+    --surface: #FFFFFF;
+    --ink: #1A1614;
+    --ink-soft: #6B615B;
+    --ink-faint: #938884;
+    --line: #E8E0DB;
+    --line-strong: #D6CAC3;
+    --danger: #B3261E;
+    --ok: #1E6B4F;
+    --watermark-opacity: 0.09;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --brand: #FF8F63;
+      --brand-ink: #FFB694;
+      --ground: #151211;
+      --surface: #1E1A18;
+      --ink: #F5F0ED;
+      --ink-soft: #B5A9A3;
+      --ink-faint: #8B7F79;
+      --line: #332C28;
+      --line-strong: #4A403A;
+      --danger: #F2B8B5;
+      --ok: #7BD1AC;
+      --watermark-opacity: 0.10;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --brand: #FF8F63;
+    --brand-ink: #FFB694;
+    --ground: #151211;
+    --surface: #1E1A18;
+    --ink: #F5F0ED;
+    --ink-soft: #B5A9A3;
+    --ink-faint: #8B7F79;
+    --line: #332C28;
+    --line-strong: #4A403A;
+    --danger: #F2B8B5;
+    --ok: #7BD1AC;
+    --watermark-opacity: 0.10;
+  }
+
+  * { box-sizing: border-box; }
+
+  html { -webkit-text-size-adjust: 100%; }
+
+  body {
+    margin: 0;
+    min-height: 100svh;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+      "Helvetica Neue", Arial, sans-serif;
+    font-size: 16px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  /* Large brand mark anchored bottom-right, behind the content. Lives in a
+     clipping wrapper so its bleed off-canvas can never widen the viewport. */
+  .watermark-frame {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .watermark {
+    position: absolute;
+    right: -6vmin;
+    bottom: -8vmin;
+    width: clamp(300px, 58vmin, 680px);
+    height: auto;
+    opacity: var(--watermark-opacity);
+    user-select: none;
+  }
+
+  .page {
+    position: relative;
+    z-index: 1;
+    min-height: 100svh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: clamp(1.75rem, 6vw, 4rem) clamp(1rem, 5vw, 2rem)
+             calc(clamp(2.5rem, 8vw, 5rem) + env(safe-area-inset-bottom));
+    gap: clamp(1.5rem, 4vw, 2.25rem);
+  }
+
+  .shell {
+    width: 100%;
+    max-width: 34rem;
+    display: flex;
+    flex-direction: column;
+    gap: clamp(1.5rem, 4vw, 2rem);
+  }
+
+  /* Centered mark + headline */
+  header.masthead {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 0.85rem;
+  }
+
+  .mark {
+    width: clamp(64px, 15vw, 80px);
+    height: auto;
+    display: block;
+  }
+
+  .eyebrow {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin: 0;
+  }
+
+  h1 {
+    font-size: clamp(1.5rem, 6vw, 2rem);
+    font-weight: 640;
+    letter-spacing: -0.022em;
+    line-height: 1.15;
+    text-wrap: balance;
+    margin: 0.3rem 0 0;
+  }
+
+  .lede {
+    color: var(--ink-soft);
+    margin: 0;
+    max-width: 30rem;
+    text-wrap: pretty;
+  }
+
+  form {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: clamp(1.15rem, 4.5vw, 1.75rem);
+    display: flex;
+    flex-direction: column;
+    gap: 1.15rem;
+  }
+
+  .field { display: flex; flex-direction: column; gap: 0.4rem; }
+
+  label {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  .req { color: var(--brand-ink); margin-left: 0.15rem; }
+
+  .hint { font-size: 0.8125rem; color: var(--ink-faint); margin: 0; }
+
+  input, select {
+    font: inherit;
+    font-size: 1rem; /* keeps iOS from zooming on focus */
+    color: var(--ink);
+    background: var(--surface);
+    border: 1px solid var(--line-strong);
+    border-radius: 9px;
+    padding: 0.7rem 0.8rem;
+    width: 100%;
+    min-height: 46px;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  select {
+    appearance: none;
+    background-image:
+      linear-gradient(45deg, transparent 50%, currentColor 50%),
+      linear-gradient(135deg, currentColor 50%, transparent 50%);
+    background-position: calc(100% - 1.15rem) 55%, calc(100% - 0.8rem) 55%;
+    background-size: 0.36rem 0.36rem, 0.36rem 0.36rem;
+    background-repeat: no-repeat;
+    padding-right: 2.4rem;
+  }
+
+  select:disabled { color: var(--ink-faint); }
+
+  input:focus-visible, select:focus-visible, button:focus-visible {
+    outline: 2px solid var(--brand);
+    outline-offset: 2px;
+    border-color: var(--brand);
+  }
+
+  input[aria-invalid="true"], select[aria-invalid="true"] {
+    border-color: var(--danger);
+  }
+
+  .err { font-size: 0.8125rem; color: var(--danger); margin: 0; }
+  .err:empty { display: none; }
+
+  /* Fixed +234 prefix: Nigerian numbers only. */
+  .phone-row {
+    display: flex;
+    align-items: stretch;
+    border: 1px solid var(--line-strong);
+    border-radius: 9px;
+    overflow: hidden;
+    background: var(--surface);
+    transition: border-color 0.15s ease;
+  }
+
+  .phone-row:focus-within {
+    outline: 2px solid var(--brand);
+    outline-offset: 2px;
+    border-color: var(--brand);
+  }
+
+  .phone-row[data-invalid="true"] { border-color: var(--danger); }
+
+  .dial {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0 0.7rem 0 0.8rem;
+    background: var(--ground);
+    border-right: 1px solid var(--line-strong);
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--ink-soft);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .phone-row input {
+    border: 0;
+    border-radius: 0;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.01em;
+  }
+
+  .phone-row input:focus-visible { outline: none; }
+
+  button.submit {
+    font: inherit;
+    font-weight: 650;
+    font-size: 1rem;
+    color: #FFFFFF;
+    background: var(--brand);
+    border: 1px solid transparent;
+    border-radius: 9px;
+    padding: 0.85rem 1rem;
+    min-height: 48px;
+    cursor: pointer;
+    transition: filter 0.15s ease, transform 0.06s ease;
+  }
+
+  button.submit:hover:not(:disabled) { filter: brightness(0.94); }
+  button.submit:active:not(:disabled) { transform: translateY(1px); }
+  button.submit:disabled { opacity: 0.55; cursor: not-allowed; }
+
+  .status {
+    font-size: 0.875rem;
+    padding: 0.7rem 0.85rem;
+    border-radius: 9px;
+    border: 1px solid var(--line);
+    margin: 0;
+    display: none;
+  }
+
+  .status[data-kind="error"] {
+    display: block; color: var(--danger); border-color: var(--danger);
+  }
+
+  .done {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: clamp(1.5rem, 6vw, 2.25rem);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 0.6rem;
+  }
+
+  .done h2 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 640;
+    letter-spacing: -0.015em;
+  }
+
+  .done p { margin: 0; color: var(--ink-soft); }
+
+  button.again {
+    font: inherit;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--brand-ink);
+    background: transparent;
+    border: 1px solid var(--line-strong);
+    border-radius: 9px;
+    padding: 0.6rem 1rem;
+    min-height: 44px;
+    cursor: pointer;
+    margin-top: 0.5rem;
+  }
+
+  footer {
+    font-size: 0.8125rem;
+    color: var(--ink-faint);
+    text-align: center;
+    margin: 0;
+  }
+
+  .sr-only {
+    position: absolute;
+    width: 1px; height: 1px;
+    padding: 0; margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="watermark-frame" aria-hidden="true">
+  <img class="watermark" src="/elivate-mark.png" alt="" />
+</div>
+
+<div class="page">
+  <div class="shell" id="shell">
+    <header class="masthead">
+      <img class="mark" src="/elivate-mark.png" alt="Elivate" />
+      <div>
+        <p class="eyebrow">CRM by Elivate</p>
+        <h1>New prospect</h1>
+      </div>
+      <p class="lede">Capture a prospect so the right team can follow up on WhatsApp.</p>
+    </header>
+
+    <form id="form" novalidate>
+      <div class="field">
+        <label for="team">Team <span class="req" aria-hidden="true">*</span></label>
+        <select id="team" name="team" required aria-describedby="team-err" disabled>
+          <option value="">Loading teams…</option>
+        </select>
+        <p class="err" id="team-err" role="alert"></p>
+      </div>
+
+      <div class="field">
+        <label for="name">Full name <span class="req" aria-hidden="true">*</span></label>
+        <input id="name" name="name" type="text" required autocomplete="name"
+               autocapitalize="words" spellcheck="false" aria-describedby="name-err" />
+        <p class="err" id="name-err" role="alert"></p>
+      </div>
+
+      <div class="field">
+        <label for="email">Email <span class="req" aria-hidden="true">*</span></label>
+        <input id="email" name="email" type="email" required autocomplete="email"
+               inputmode="email" autocapitalize="off" spellcheck="false"
+               aria-describedby="email-err" />
+        <p class="err" id="email-err" role="alert"></p>
+      </div>
+
+      <div class="field">
+        <label for="phone">WhatsApp number <span class="req" aria-hidden="true">*</span></label>
+        <div class="phone-row" id="phone-row">
+          <span class="dial" aria-hidden="true">🇳🇬 +234</span>
+          <label class="sr-only" for="phone">Nigerian WhatsApp number without the country code</label>
+          <input id="phone" name="phone" type="tel" required inputmode="numeric"
+                 autocomplete="tel-national" placeholder="801 234 5678"
+                 maxlength="13" aria-describedby="phone-err phone-hint" />
+        </div>
+        <p class="hint" id="phone-hint">Nigerian numbers only — e.g. 0801 234 5678.</p>
+        <p class="err" id="phone-err" role="alert"></p>
+      </div>
+
+      <p class="status" id="status" role="status" aria-live="polite"></p>
+
+      <button class="submit" id="submit" type="submit">Add prospect</button>
+    </form>
+
+    <footer>Saved directly into CRM by Elivate.</footer>
+  </div>
+</div>
+
+<script>
+  const form = document.getElementById('form');
+  const teamSel = document.getElementById('team');
+  const phoneInput = document.getElementById('phone');
+  const phoneRow = document.getElementById('phone-row');
+  const statusEl = document.getElementById('status');
+  const submitBtn = document.getElementById('submit');
+
+  const setError = (id, message) => {
+    const errEl = document.getElementById(id + '-err');
+    const input = document.getElementById(id);
+    errEl.textContent = message || '';
+    if (input) input.setAttribute('aria-invalid', message ? 'true' : 'false');
+    if (id === 'phone') phoneRow.dataset.invalid = message ? 'true' : 'false';
+    return !message;
+  };
+
+  const clearErrors = () => ['team', 'name', 'email', 'phone'].forEach((id) => setError(id, ''));
+
+  // Load the real teams from the CRM.
+  const loadTeams = async () => {
+    try {
+      const response = await fetch('/api/teams');
+      if (!response.ok) throw new Error('load failed');
+
+      const { teams } = await response.json();
+      teamSel.replaceChildren();
+
+      if (!teams || teams.length === 0) {
+        teamSel.append(new Option('No teams found in the CRM', ''));
+        teamSel.disabled = true;
+        return;
+      }
+
+      teamSel.append(new Option('Select a team', ''));
+      for (const team of teams) {
+        teamSel.append(new Option(team.name, team.id));
+      }
+      teamSel.disabled = false;
+    } catch {
+      teamSel.replaceChildren(new Option('Could not load teams', ''));
+      teamSel.disabled = true;
+      setError('team', 'Teams could not be loaded. Refresh the page to try again.');
+    }
+  };
+
+  loadTeams();
+
+  // Nigerian mobile: 10 national digits, first digit 7/8/9.
+  const nationalDigits = (raw) => {
+    let digits = String(raw).replace(/\D/g, '');
+    if (digits.startsWith('234')) digits = digits.slice(3);
+    return digits.replace(/^0+/, '');
+  };
+
+  // Display grouping: 801 234 5678
+  phoneInput.addEventListener('input', () => {
+    const digits = phoneInput.value.replace(/\D/g, '').slice(0, 11);
+    const groups = [];
+    if (digits.length > 0) groups.push(digits.slice(0, digits.startsWith('0') ? 4 : 3));
+    const rest = digits.slice(groups[0]?.length ?? 0);
+    if (rest.length > 0) groups.push(rest.slice(0, 3));
+    if (rest.length > 3) groups.push(rest.slice(3, 7));
+    phoneInput.value = groups.join(' ').trim();
+  });
+
+  const emailOk = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value);
+
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    clearErrors();
+    statusEl.removeAttribute('data-kind');
+    statusEl.textContent = '';
+
+    const teamId = teamSel.value;
+    const name = document.getElementById('name').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const national = nationalDigits(phoneInput.value);
+
+    let valid = true;
+    valid = setError('team', teamId ? '' : 'Choose a team.') && valid;
+    valid = setError('name', name.length >= 2 ? '' : 'Enter the prospect’s full name.') && valid;
+    valid = setError('email', emailOk(email) ? '' : 'Enter a valid email address.') && valid;
+
+    let phoneMessage = '';
+    if (national.length === 0) phoneMessage = 'Enter their WhatsApp number.';
+    else if (national.length !== 10) phoneMessage = 'A Nigerian number has 10 digits after +234.';
+    else if (!/^[789]/.test(national)) phoneMessage = 'That is not a valid Nigerian mobile number.';
+    valid = setError('phone', phoneMessage) && valid;
+
+    if (!valid) return;
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Adding…';
+
+    try {
+      const response = await fetch('/api/prospects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ teamId, name, email, whatsapp: '+234' + national }),
+      });
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        if (payload.errors) {
+          for (const [field, message] of Object.entries(payload.errors)) setError(field, message);
+          throw new Error('validation');
+        }
+        throw new Error('save failed');
+      }
+
+      const shell = document.getElementById('shell');
+      const done = document.createElement('div');
+      done.className = 'done';
+
+      const heading = document.createElement('h2');
+      heading.textContent = 'Prospect added';
+
+      const detail = document.createElement('p');
+      detail.textContent = name + ' is now in CRM by Elivate for follow-up.';
+
+      const again = document.createElement('button');
+      again.className = 'again';
+      again.type = 'button';
+      again.textContent = 'Add another';
+      again.addEventListener('click', () => location.reload());
+
+      done.append(heading, detail, again);
+      shell.replaceChildren(shell.querySelector('.masthead'), done);
+    } catch (error) {
+      if (error.message !== 'validation') {
+        statusEl.dataset.kind = 'error';
+        statusEl.textContent = 'Could not save this prospect. Check your connection and try again.';
+      }
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Add prospect';
+    }
+  });
+</script>
+</body>
+</html>
