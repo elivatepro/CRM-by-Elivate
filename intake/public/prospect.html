@@ -14,8 +14,14 @@
     --ink: #1A1614;
     --ink-soft: #6B615B;
     --ink-faint: #938884;
-    --line: #E8E0DB;
-    --line-strong: #D6CAC3;
+    --line: #EDE7E3;
+    --line-strong: #E2D9D4;
+    /* Field edges sit barely above the surface: the input is read by its
+       fill, not by an outline. */
+    --field-line: #F0EAE6;
+    --field-fill: #F7F3F1;
+    --field-line-hover: #E2D9D4;
+    --menu-surface: #FFFFFF;
     --danger: #B3261E;
     --ok: #1E6B4F;
     --watermark-opacity: 0.09;
@@ -30,8 +36,12 @@
       --ink: #F5F0ED;
       --ink-soft: #B5A9A3;
       --ink-faint: #8B7F79;
-      --line: #332C28;
-      --line-strong: #4A403A;
+      --line: #2C2522;
+      --line-strong: #3A322D;
+      --field-line: #2A2320;
+      --field-fill: #252020;
+      --field-line-hover: #3A322D;
+      --menu-surface: #272220;
       --danger: #F2B8B5;
       --ok: #7BD1AC;
       --watermark-opacity: 0.10;
@@ -46,8 +56,12 @@
     --ink: #F5F0ED;
     --ink-soft: #B5A9A3;
     --ink-faint: #8B7F79;
-    --line: #332C28;
-    --line-strong: #4A403A;
+    --line: #2C2522;
+    --line-strong: #3A322D;
+    --field-line: #2A2320;
+    --field-fill: #252020;
+    --field-line-hover: #3A322D;
+    --menu-surface: #272220;
     --danger: #F2B8B5;
     --ok: #7BD1AC;
     --watermark-opacity: 0.10;
@@ -163,6 +177,10 @@
 
   .field { display: flex; flex-direction: column; gap: 0.4rem; }
 
+  /* The open dropdown floats over the fields below it rather than pushing
+     them down, so raise its row above its siblings. */
+  .field:has(.select[data-open="true"]) { position: relative; z-index: 30; }
+
   label {
     font-size: 0.8125rem;
     font-weight: 600;
@@ -173,55 +191,144 @@
 
   .hint { font-size: 0.8125rem; color: var(--ink-faint); margin: 0; }
 
-  input, select {
+  input, .select-trigger {
     font: inherit;
     font-size: 1rem; /* keeps iOS from zooming on focus */
     color: var(--ink);
-    background: var(--surface);
-    border: 1px solid var(--line-strong);
+    background: var(--field-fill);
+    border: 1px solid var(--field-line);
     border-radius: 9px;
     padding: 0.7rem 0.8rem;
     width: 100%;
     min-height: 46px;
-    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
   }
 
-  select {
-    appearance: none;
-    background-image:
-      linear-gradient(45deg, transparent 50%, currentColor 50%),
-      linear-gradient(135deg, currentColor 50%, transparent 50%);
-    background-position: calc(100% - 1.15rem) 55%, calc(100% - 0.8rem) 55%;
-    background-size: 0.36rem 0.36rem, 0.36rem 0.36rem;
-    background-repeat: no-repeat;
-    padding-right: 2.4rem;
-  }
+  input:hover, .select-trigger:hover { border-color: var(--field-line-hover); }
 
-  select:disabled { color: var(--ink-faint); }
+  input::placeholder { color: var(--ink-faint); }
 
-  input:focus-visible, select:focus-visible, button:focus-visible {
+  input:focus-visible, button:focus-visible, .select-trigger:focus-visible {
     outline: 2px solid var(--brand);
     outline-offset: 2px;
     border-color: var(--brand);
   }
 
-  input[aria-invalid="true"], select[aria-invalid="true"] {
+  input[aria-invalid="true"], .select-trigger[aria-invalid="true"] {
     border-color: var(--danger);
   }
 
   .err { font-size: 0.8125rem; color: var(--danger); margin: 0; }
   .err:empty { display: none; }
 
+  /* Custom dropdown. A native select renders its list through the OS, which
+     cannot be styled to match the form, so the list is built in the page. */
+  .select { position: relative; }
+
+  .select-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
+    text-align: left;
+    cursor: pointer;
+    padding-right: 0.75rem;
+  }
+
+  .select-trigger[data-placeholder="true"] .select-value { color: var(--ink-faint); }
+
+  .select-trigger:disabled {
+    cursor: not-allowed;
+    color: var(--ink-faint);
+  }
+
+  .select-value {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .select-caret {
+    flex: 0 0 auto;
+    width: 0.62rem;
+    height: 0.62rem;
+    border-right: 1.8px solid var(--ink-faint);
+    border-bottom: 1.8px solid var(--ink-faint);
+    transform: translateY(-0.16em) rotate(45deg);
+    transition: transform 0.18s ease;
+  }
+
+  .select[data-open="true"] .select-caret {
+    transform: translateY(0.1em) rotate(225deg);
+  }
+
+  .select-list {
+    position: absolute;
+    top: calc(100% + 0.35rem);
+    left: 0;
+    right: 0;
+    z-index: 20;
+    margin: 0;
+    padding: 0.3rem;
+    list-style: none;
+    background: var(--menu-surface);
+    border: 1px solid var(--line-strong);
+    border-radius: 10px;
+    box-shadow: 0 16px 34px -14px rgba(0, 0, 0, 0.45),
+                0 3px 8px -3px rgba(0, 0, 0, 0.25);
+    max-height: 15rem;
+    overflow-y: auto;
+    display: none;
+  }
+
+  .select[data-open="true"] .select-list { display: block; }
+
+  .select-option {
+    padding: 0.6rem 0.7rem;
+    border-radius: 7px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  .select-option[data-active="true"] { background: var(--field-fill); }
+
+  .select-option[aria-selected="true"] {
+    color: var(--brand-ink);
+    font-weight: 600;
+  }
+
+  .select-option[aria-selected="true"]::after {
+    content: "";
+    flex: 0 0 auto;
+    width: 0.3rem;
+    height: 0.6rem;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    transform: rotate(45deg) translateY(-0.06em);
+  }
+
+  .select-empty {
+    padding: 0.6rem 0.7rem;
+    font-size: 0.9rem;
+    color: var(--ink-faint);
+  }
+
   /* Fixed +234 prefix: Nigerian numbers only. */
   .phone-row {
     display: flex;
     align-items: stretch;
-    border: 1px solid var(--line-strong);
+    border: 1px solid var(--field-line);
     border-radius: 9px;
     overflow: hidden;
-    background: var(--surface);
+    background: var(--field-fill);
     transition: border-color 0.15s ease;
   }
+
+  .phone-row:hover { border-color: var(--field-line-hover); }
 
   .phone-row:focus-within {
     outline: 2px solid var(--brand);
@@ -236,8 +343,8 @@
     align-items: center;
     gap: 0.4rem;
     padding: 0 0.7rem 0 0.8rem;
-    background: var(--ground);
-    border-right: 1px solid var(--line-strong);
+    background: transparent;
+    border-right: 1px solid var(--field-line);
     font-size: 0.95rem;
     font-weight: 600;
     color: var(--ink-soft);
@@ -248,6 +355,7 @@
   .phone-row input {
     border: 0;
     border-radius: 0;
+    background: transparent;
     font-variant-numeric: tabular-nums;
     letter-spacing: 0.01em;
   }
@@ -361,10 +469,18 @@
 
     <form id="form" novalidate>
       <div class="field">
-        <label for="team">Team <span class="req" aria-hidden="true">*</span></label>
-        <select id="team" name="team" required aria-describedby="team-err" disabled>
-          <option value="">Loading teams…</option>
-        </select>
+        <label id="team-label" for="team-trigger">Team <span class="req" aria-hidden="true">*</span></label>
+        <div class="select" id="team-select" data-open="false">
+          <button type="button" class="select-trigger" id="team-trigger"
+                  role="combobox" aria-haspopup="listbox" aria-expanded="false"
+                  aria-controls="team-list" aria-labelledby="team-label team-trigger"
+                  aria-describedby="team-err" data-placeholder="true" disabled>
+            <span class="select-value" id="team-value">Loading teams…</span>
+            <span class="select-caret" aria-hidden="true"></span>
+          </button>
+          <ul class="select-list" id="team-list" role="listbox" aria-labelledby="team-label"></ul>
+        </div>
+        <input type="hidden" id="team" name="team" value="" />
         <p class="err" id="team-err" role="alert"></p>
       </div>
 
@@ -407,7 +523,7 @@
 
 <script>
   const form = document.getElementById('form');
-  const teamSel = document.getElementById('team');
+  const teamField = document.getElementById('team');
   const phoneInput = document.getElementById('phone');
   const phoneRow = document.getElementById('phone-row');
   const statusEl = document.getElementById('status');
@@ -415,14 +531,126 @@
 
   const setError = (id, message) => {
     const errEl = document.getElementById(id + '-err');
-    const input = document.getElementById(id);
+    const target =
+      id === 'team' ? document.getElementById('team-trigger') : document.getElementById(id);
     errEl.textContent = message || '';
-    if (input) input.setAttribute('aria-invalid', message ? 'true' : 'false');
+    if (target) target.setAttribute('aria-invalid', message ? 'true' : 'false');
     if (id === 'phone') phoneRow.dataset.invalid = message ? 'true' : 'false';
     return !message;
   };
 
   const clearErrors = () => ['team', 'name', 'email', 'phone'].forEach((id) => setError(id, ''));
+
+  // --- Custom dropdown -----------------------------------------------------
+  const selectRoot = document.getElementById('team-select');
+  const trigger = document.getElementById('team-trigger');
+  const valueEl = document.getElementById('team-value');
+  const listEl = document.getElementById('team-list');
+
+  let teamOptions = [];
+  let activeIndex = -1;
+
+  const isOpen = () => selectRoot.dataset.open === 'true';
+
+  const setActive = (index) => {
+    activeIndex = index;
+    const nodes = listEl.querySelectorAll('.select-option');
+    nodes.forEach((node, i) => {
+      const active = i === index;
+      node.dataset.active = active ? 'true' : 'false';
+      if (active) {
+        trigger.setAttribute('aria-activedescendant', node.id);
+        node.scrollIntoView({ block: 'nearest' });
+      }
+    });
+  };
+
+  const closeList = () => {
+    selectRoot.dataset.open = 'false';
+    trigger.setAttribute('aria-expanded', 'false');
+    trigger.removeAttribute('aria-activedescendant');
+  };
+
+  const openList = () => {
+    if (trigger.disabled || teamOptions.length === 0) return;
+    selectRoot.dataset.open = 'true';
+    trigger.setAttribute('aria-expanded', 'true');
+    const current = teamOptions.findIndex((t) => t.id === teamField.value);
+    setActive(current >= 0 ? current : 0);
+  };
+
+  const choose = (index) => {
+    const team = teamOptions[index];
+    if (!team) return;
+    teamField.value = team.id;
+    valueEl.textContent = team.name;
+    trigger.dataset.placeholder = 'false';
+    listEl.querySelectorAll('.select-option').forEach((node, i) => {
+      node.setAttribute('aria-selected', i === index ? 'true' : 'false');
+    });
+    setError('team', '');
+    closeList();
+    trigger.focus();
+  };
+
+  const renderOptions = () => {
+    listEl.replaceChildren();
+    teamOptions.forEach((team, i) => {
+      const item = document.createElement('li');
+      item.className = 'select-option';
+      item.id = 'team-option-' + i;
+      item.setAttribute('role', 'option');
+      item.setAttribute('aria-selected', teamField.value === team.id ? 'true' : 'false');
+      item.textContent = team.name;
+      item.addEventListener('click', () => choose(i));
+      item.addEventListener('mousemove', () => setActive(i));
+      listEl.append(item);
+    });
+  };
+
+  trigger.addEventListener('click', () => (isOpen() ? closeList() : openList()));
+
+  trigger.addEventListener('keydown', (event) => {
+    const { key } = event;
+    if (!isOpen()) {
+      if (key === 'ArrowDown' || key === 'Enter' || key === ' ') {
+        event.preventDefault();
+        openList();
+      }
+      return;
+    }
+    if (key === 'ArrowDown') {
+      event.preventDefault();
+      setActive(Math.min(activeIndex + 1, teamOptions.length - 1));
+    } else if (key === 'ArrowUp') {
+      event.preventDefault();
+      setActive(Math.max(activeIndex - 1, 0));
+    } else if (key === 'Home') {
+      event.preventDefault();
+      setActive(0);
+    } else if (key === 'End') {
+      event.preventDefault();
+      setActive(teamOptions.length - 1);
+    } else if (key === 'Enter' || key === ' ') {
+      event.preventDefault();
+      choose(activeIndex);
+    } else if (key === 'Escape') {
+      event.preventDefault();
+      closeList();
+    } else if (key === 'Tab') {
+      closeList();
+    }
+  });
+
+  document.addEventListener('click', (event) => {
+    if (isOpen() && !selectRoot.contains(event.target)) closeList();
+  });
+
+  const setTriggerMessage = (message) => {
+    valueEl.textContent = message;
+    trigger.dataset.placeholder = 'true';
+    trigger.disabled = true;
+  };
 
   // Load the real teams from the CRM.
   const loadTeams = async () => {
@@ -431,22 +659,19 @@
       if (!response.ok) throw new Error('load failed');
 
       const { teams } = await response.json();
-      teamSel.replaceChildren();
 
       if (!teams || teams.length === 0) {
-        teamSel.append(new Option('No teams found in the CRM', ''));
-        teamSel.disabled = true;
+        setTriggerMessage('No teams found in the CRM');
         return;
       }
 
-      teamSel.append(new Option('Select a team', ''));
-      for (const team of teams) {
-        teamSel.append(new Option(team.name, team.id));
-      }
-      teamSel.disabled = false;
+      teamOptions = teams;
+      renderOptions();
+      valueEl.textContent = 'Select a team';
+      trigger.dataset.placeholder = 'true';
+      trigger.disabled = false;
     } catch {
-      teamSel.replaceChildren(new Option('Could not load teams', ''));
-      teamSel.disabled = true;
+      setTriggerMessage('Could not load teams');
       setError('team', 'Teams could not be loaded. Refresh the page to try again.');
     }
   };
@@ -479,7 +704,7 @@
     statusEl.removeAttribute('data-kind');
     statusEl.textContent = '';
 
-    const teamId = teamSel.value;
+    const teamId = teamField.value;
     const name = document.getElementById('name').value.trim();
     const email = document.getElementById('email').value.trim();
     const national = nationalDigits(phoneInput.value);
