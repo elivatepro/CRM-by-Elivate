@@ -712,3 +712,28 @@ button.back:hover { border-color: var(--field-line-hover); color: var(--ink); }
 /* The hidden attribute must win over the display rules above, otherwise a
    conditionally-shown field stays visible. */
 [hidden] { display: none !important; }
+
+/* Member ID shown after registration */
+.member-id-label {
+  margin: 1.25rem 0 0;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.member-id {
+  margin: 0.25rem 0 0;
+  font-size: 1.75rem;
+  font-weight: 680;
+  letter-spacing: 0.04em;
+  color: var(--brand-pale);
+  font-variant-numeric: tabular-nums;
+}
+
+.member-id-hint {
+  margin: 0.35rem 0 0;
+  font-size: 0.8125rem;
+  color: var(--ink-soft);
+}

@@ -570,6 +570,7 @@
         throw new Error('failed');
       }
 
+      const result = await response.json().catch(() => ({}));
       const shell = document.getElementById('shell');
       const done = document.createElement('div');
       done.className = 'done';
@@ -581,6 +582,22 @@
       detail.textContent = 'Your application has been received, pay attention to your email.';
 
       done.append(heading, detail);
+
+      if (result.memberId) {
+        const idLabel = document.createElement('p');
+        idLabel.className = 'member-id-label';
+        idLabel.textContent = 'Your member ID';
+
+        const idValue = document.createElement('p');
+        idValue.className = 'member-id';
+        idValue.textContent = result.memberId;
+
+        const idHint = document.createElement('p');
+        idHint.className = 'member-id-hint';
+        idHint.textContent = 'Keep this. You will need it when submitting monthly orders.';
+
+        done.append(idLabel, idValue, idHint);
+      }
       shell.replaceChildren(shell.querySelector('.masthead'), done);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (error) {

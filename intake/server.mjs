@@ -245,6 +245,92 @@ const createProspect = async (body) => {
   return { ok: true, status: 201, name };
 };
 
+// --- Member IDs ------------------------------------------------------------
+
+// Sequential, human-readable, and stable: EN-0001, EN-0002, ... A member
+// quotes this on order forms, so it has to be easy to read off a screen and
+// type without ambiguity.
+const MEMBER_ID_PREFIX = process.env.MEMBER_ID_PREFIX ?? 'ELV';
+
+// ELV-000 through ELV-999. Random rather than sequential, so a member id
+// reveals nothing about how many people have joined. Only 1000 exist, so a
+// candidate is checked against the workspace before it is handed out.
+const randomMemberId = () =>
+  `${MEMBER_ID_PREFIX}-${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`;
+
+const memberIdTaken = async (candidate) => {
+  const payload = await twentyRequest(
+    `${encodeURIComponent(personObject)}?limit=1&filter=memberId[eq]:${encodeURIComponent(candidate)}`,
+  );
+  return extractRecords(payload, personObject).length > 0;
+};
+
+const nextMemberId = async () => {
+  for (let attempt = 0; attempt < 25; attempt += 1) {
+    const candidate = randomMemberId();
+    try {
+      if (!(await memberIdTaken(candidate))) return candidate;
+    } catch {
+      // If the check cannot run, use the candidate rather than block a
+      // registration; a duplicate is recoverable, a lost registration is not.
+      return candidate;
+    }
+  }
+
+  // The 1000-id space is effectively full. Fall back to a wider id so
+  // registration still succeeds instead of failing outright.
+  console.warn('[intake] ELV id space exhausted, issuing an extended id');
+  return `${MEMBER_ID_PREFIX}-${String(Math.floor(Math.random() * 9000) + 1000)}`;
+};
+
+// Orders can arrive before the person registers, and someone who has not
+// registered yet cannot know their member id: it does not exist until
+// registration assigns it. So earlier orders are matched on the WhatsApp
+// number they submitted as well as on the member id, and both are backfilled.
+const linkOrphanedOrders = async (memberId, nationalNumber, personId) => {
+  if (!personId) return 0;
+
+  const filters = [];
+  if (memberId) {
+    filters.push(`filter=memberIdEntered[eq]:${encodeURIComponent(memberId)}`);
+  }
+  if (nationalNumber) {
+    filters.push(
+      `filter=whatsappNumber.primaryPhoneNumber[eq]:${encodeURIComponent(nationalNumber)}`,
+    );
+  }
+
+  const seen = new Set();
+  let linked = 0;
+
+  for (const filter of filters) {
+    try {
+      const payload = await twentyRequest(
+        `${encodeURIComponent(pickupOrderObject)}?limit=200&${filter}`,
+      );
+
+      for (const order of extractRecords(payload, pickupOrderObject)) {
+        if (order.memberId || seen.has(order.id)) continue;
+        seen.add(order.id);
+
+        await twentyRequest(`${encodeURIComponent(pickupOrderObject)}/${order.id}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ memberId: personId, memberIdEntered: memberId }),
+        });
+        linked += 1;
+      }
+    } catch (error) {
+      console.error('[intake] could not link earlier orders:', error.message);
+    }
+  }
+
+  if (linked > 0) {
+    console.log(`[intake] linked ${linked} earlier order(s) to ${memberId}`);
+  }
+
+  return linked;
+};
+
 // --- Member registration ---------------------------------------------------
 
 const TITLES = new Set(['MR', 'MRS', 'MISS']);
@@ -268,7 +354,7 @@ const findExistingPerson = async (email, nationalNumber) => {
         `${encodeURIComponent(personObject)}?limit=1&${filter}`,
       );
       const [match] = extractRecords(payload, personObject);
-      if (match?.id) return match.id;
+      if (match?.id) return match;
     } catch {
       // A failed lookup should not block registration; fall through to create.
     }
@@ -388,15 +474,20 @@ const registerMember = async (body) => {
     registeredAt: now,
   };
 
-  const existingId = await findExistingPerson(
+  const existing = await findExistingPerson(
     email,
     whatsapp.slice(NIGERIA_DIAL.length),
   );
 
-  let personId = existingId;
+  // Keep an id the member already has; only mint one when there is none, so a
+  // member's id never changes underneath them.
+  const memberId = existing?.memberId || (await nextMemberId());
+  record.memberId = memberId;
 
-  if (existingId) {
-    await twentyRequest(`${encodeURIComponent(personObject)}/${existingId}`, {
+  let personId = existing?.id ?? null;
+
+  if (personId) {
+    await twentyRequest(`${encodeURIComponent(personObject)}/${personId}`, {
       method: 'PATCH',
       body: JSON.stringify(record),
     });
@@ -408,6 +499,9 @@ const registerMember = async (body) => {
     personId =
       created?.data?.createPerson?.id ?? created?.data?.id ?? created?.id;
   }
+
+  // Attach any orders this member submitted before registering.
+  await linkOrphanedOrders(memberId, whatsapp.slice(NIGERIA_DIAL.length), personId);
 
   // Files are best-effort: a storage failure must not discard a completed
   // registration, so failures are logged rather than thrown.
@@ -422,19 +516,21 @@ const registerMember = async (body) => {
     }
   }
 
-  return { ok: true, status: 201, upgraded: Boolean(existingId), firstName };
+  return { ok: true, status: 201, memberId, upgraded: Boolean(existing), firstName };
 };
 
 const submitPickupOrder = async (body) => {
   const name = clean(body.name, 120);
   const orderId = clean(body.orderId, 64);
   const neolifeId = clean(body.neolifeId, 64);
+  const memberIdEntered = clean(body.memberId, 32).toUpperCase();
   const whatsapp = normalizeNigerianMobile(body.whatsapp);
 
   const errors = {};
   if (name.length < 2) errors.name = 'Enter your full name.';
   if (!orderId) errors.orderId = 'Enter your order ID.';
   if (!neolifeId) errors.neolifeId = 'Enter your NeoLife ID.';
+  if (!memberIdEntered) errors.memberId = 'Enter your member ID.';
   if (!whatsapp) errors.phone = 'Enter a valid Nigerian WhatsApp number.';
 
   if (Object.keys(errors).length > 0) {
@@ -443,37 +539,49 @@ const submitPickupOrder = async (body) => {
 
   const national = whatsapp.slice(NIGERIA_DIAL.length);
 
-  // Link the order to the member's existing record when the number matches.
-  // An unmatched order still saves: the details typed are the point, and an
-  // unlinked order is far better than a lost one.
-  let memberId = null;
-  try {
-    const payload = await twentyRequest(
-      `${encodeURIComponent(personObject)}?limit=1&filter=phones.primaryPhoneNumber[eq]:${encodeURIComponent(national)}`,
-    );
-    const [match] = extractRecords(payload, personObject);
-    memberId = match?.id ?? null;
-  } catch {
-    // fall through unlinked
+  // Member id is the link: it is stable and the member quotes it themselves.
+  // The WhatsApp number is only a fallback for a mistyped or forgotten id.
+  let personId = null;
+  const lookups = [
+    `filter=memberId[eq]:${encodeURIComponent(memberIdEntered)}`,
+    `filter=phones.primaryPhoneNumber[eq]:${encodeURIComponent(national)}`,
+  ];
+
+  for (const filter of lookups) {
+    try {
+      const payload = await twentyRequest(
+        `${encodeURIComponent(personObject)}?limit=1&${filter}`,
+      );
+      const [match] = extractRecords(payload, personObject);
+      if (match?.id) {
+        personId = match.id;
+        break;
+      }
+    } catch {
+      // try the next lookup
+    }
   }
 
+  // An unmatched order still saves. The submitted member id stays on the
+  // record, so registering later attaches this order automatically.
   await twentyRequest(encodeURIComponent(pickupOrderObject), {
     method: 'POST',
     body: JSON.stringify({
       name,
       orderId,
       neolifeId,
+      memberIdEntered,
       whatsappNumber: {
         primaryPhoneNumber: national,
         primaryPhoneCallingCode: NIGERIA_DIAL,
         primaryPhoneCountryCode: 'NG',
       },
       submittedAt: new Date().toISOString(),
-      ...(memberId ? { memberId } : {}),
+      ...(personId ? { memberId: personId } : {}),
     }),
   });
 
-  return { ok: true, status: 201, linked: Boolean(memberId) };
+  return { ok: true, status: 201, linked: Boolean(personId) };
 };
 
 const routes = {
@@ -533,7 +641,9 @@ const routes = {
       if (!result.ok) {
         return sendJson(response, result.status, { errors: result.errors });
       }
-      sendJson(response, 201, { ok: true });
+      // The member id goes back to the browser so the confirmation can show
+      // it: the member needs it to submit orders.
+      sendJson(response, 201, { ok: true, memberId: result.memberId });
     } catch (error) {
       sendJson(response, error.statusCode ?? 502, {
         error: 'Could not complete your registration. Please try again.',

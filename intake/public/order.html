@@ -35,6 +35,15 @@
       </div>
 
       <div class="field">
+        <label for="memberId">Member ID <span class="req" aria-hidden="true">*</span></label>
+        <input id="memberId" name="memberId" type="text" placeholder="ELV-000"
+               autocapitalize="characters" spellcheck="false"
+               aria-describedby="memberId-err memberId-hint" />
+        <p class="hint" id="memberId-hint">Shown when you registered. Ask your upline if you don't have it.</p>
+        <p class="err" id="memberId-err" role="alert"></p>
+      </div>
+
+      <div class="field">
         <label for="orderId">Order ID <span class="req" aria-hidden="true">*</span></label>
         <input id="orderId" name="orderId" type="text" autocapitalize="characters"
                spellcheck="false" aria-describedby="orderId-err" />
@@ -107,12 +116,14 @@
     statusEl.textContent = '';
 
     const name = val('name');
+    const memberId = val('memberId').toUpperCase();
     const orderId = val('orderId');
     const neolifeId = val('neolifeId');
     const digits = nationalDigits(phoneInput.value);
 
     let ok = true;
     ok = setError('name', name.length >= 2 ? '' : 'Enter your full name.') && ok;
+    ok = setError('memberId', memberId ? '' : 'Enter your member ID.') && ok;
     ok = setError('orderId', orderId ? '' : 'Enter your order ID.') && ok;
     ok = setError('neolifeId', neolifeId ? '' : 'Enter your NeoLife ID.') && ok;
 
@@ -131,7 +142,7 @@
       const response = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, orderId, neolifeId, whatsapp: '+234' + digits }),
+        body: JSON.stringify({ name, memberId, orderId, neolifeId, whatsapp: '+234' + digits }),
       });
 
       if (!response.ok) {

@@ -62,11 +62,24 @@ The form's Team dropdown is populated from the **Team** object in the CRM, so
 adding or renaming a team in Twenty changes the form with no redeploy. Teams
 with an empty name are skipped.
 
+### Member IDs
+
+Registration assigns every member an `ELV-XXX` identifier, three random digits,
+shown on the confirmation screen. It is random rather than sequential so an id
+reveals nothing about how many people have joined, and it is checked against
+the workspace before being issued. A member who registers again keeps the id
+they already have. The format holds 1000 members.
+
 ### Pickup orders
 
-Members submit their monthly order for collection: full name, order ID,
-NeoLife ID, and WhatsApp number. Each submission becomes a **Pickup Order**
-record linked to the member's Person record, matched on the WhatsApp number.
+Members submit their monthly order for collection: full name, member ID, order
+ID, NeoLife ID, and WhatsApp number. Each submission becomes a **Pickup Order**
+record linked to the member's Person record, matched on the member ID and
+falling back to the WhatsApp number.
+
+An order can arrive before its member registers. When that member later
+registers, any earlier order matching their member ID or WhatsApp number is
+attached to the new record, so nothing submitted early is stranded.
 
 An order is a repeating event, so it is a record of its own rather than fields
 on the person: a member orders again every month, and order fields on a Person
