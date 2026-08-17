@@ -26,6 +26,7 @@ const attachmentFileFieldId =
   process.env.TWENTY_ATTACHMENT_FILE_FIELD_ID ??
   '44243f77-42e7-4bb6-83ba-676ba1764d36';
 const opportunityObject = process.env.TWENTY_OPPORTUNITY_OBJECT ?? 'opportunities';
+const pickupOrderObject = process.env.TWENTY_PICKUP_ORDER_OBJECT ?? 'pickupOrders';
 
 const missingConfig = [];
 if (!apiUrl) missingConfig.push('TWENTY_API_URL');
@@ -424,6 +425,57 @@ const registerMember = async (body) => {
   return { ok: true, status: 201, upgraded: Boolean(existingId), firstName };
 };
 
+const submitPickupOrder = async (body) => {
+  const name = clean(body.name, 120);
+  const orderId = clean(body.orderId, 64);
+  const neolifeId = clean(body.neolifeId, 64);
+  const whatsapp = normalizeNigerianMobile(body.whatsapp);
+
+  const errors = {};
+  if (name.length < 2) errors.name = 'Enter your full name.';
+  if (!orderId) errors.orderId = 'Enter your order ID.';
+  if (!neolifeId) errors.neolifeId = 'Enter your NeoLife ID.';
+  if (!whatsapp) errors.phone = 'Enter a valid Nigerian WhatsApp number.';
+
+  if (Object.keys(errors).length > 0) {
+    return { ok: false, status: 400, errors };
+  }
+
+  const national = whatsapp.slice(NIGERIA_DIAL.length);
+
+  // Link the order to the member's existing record when the number matches.
+  // An unmatched order still saves: the details typed are the point, and an
+  // unlinked order is far better than a lost one.
+  let memberId = null;
+  try {
+    const payload = await twentyRequest(
+      `${encodeURIComponent(personObject)}?limit=1&filter=phones.primaryPhoneNumber[eq]:${encodeURIComponent(national)}`,
+    );
+    const [match] = extractRecords(payload, personObject);
+    memberId = match?.id ?? null;
+  } catch {
+    // fall through unlinked
+  }
+
+  await twentyRequest(encodeURIComponent(pickupOrderObject), {
+    method: 'POST',
+    body: JSON.stringify({
+      name,
+      orderId,
+      neolifeId,
+      whatsappNumber: {
+        primaryPhoneNumber: national,
+        primaryPhoneCallingCode: NIGERIA_DIAL,
+        primaryPhoneCountryCode: 'NG',
+      },
+      submittedAt: new Date().toISOString(),
+      ...(memberId ? { memberId } : {}),
+    }),
+  });
+
+  return { ok: true, status: 201, linked: Boolean(memberId) };
+};
+
 const routes = {
   'GET /healthz': async (_request, response) => {
     sendJson(response, 200, {
@@ -439,6 +491,29 @@ const routes = {
     } catch (error) {
       sendJson(response, error.statusCode ?? 502, {
         error: 'Could not load teams from the CRM.',
+      });
+    }
+  },
+
+  'POST /api/orders': async (request, response) => {
+    let body;
+    try {
+      body = await readJsonBody(request);
+    } catch (error) {
+      return sendJson(response, error.statusCode ?? 400, {
+        error: error.statusCode === 413 ? 'Request too large.' : 'Invalid request.',
+      });
+    }
+
+    try {
+      const result = await submitPickupOrder(body);
+      if (!result.ok) {
+        return sendJson(response, result.status, { errors: result.errors });
+      }
+      sendJson(response, 201, { ok: true });
+    } catch (error) {
+      sendJson(response, error.statusCode ?? 502, {
+        error: 'Could not submit your order. Please try again.',
       });
     }
   },
@@ -494,6 +569,7 @@ const staticFiles = {
   '/': { file: 'index.html', type: 'text/html; charset=utf-8' },
   '/prospect': { file: 'prospect.html', type: 'text/html; charset=utf-8' },
   '/member': { file: 'member.html', type: 'text/html; charset=utf-8' },
+  '/order': { file: 'order.html', type: 'text/html; charset=utf-8' },
   '/elivate-mark.png': { file: 'elivate-mark.png', type: 'image/png' },
   '/form.css': { file: 'form.css', type: 'text/css; charset=utf-8' },
 };

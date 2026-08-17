@@ -53,6 +53,7 @@ the standard library, built from `Dockerfile.intake`.
 | `/` | Index listing the available forms |
 | `/prospect` | New-prospect form |
 | `/member` | Join Elivate Network member registration |
+| `/order` | Monthly product order for team pickup |
 | `GET /api/teams` | Team names read live from the CRM |
 | `POST /api/prospects` | Creates a prospect record |
 | `/healthz` | Health check, reports whether CRM access is configured |
@@ -60,6 +61,17 @@ the standard library, built from `Dockerfile.intake`.
 The form's Team dropdown is populated from the **Team** object in the CRM, so
 adding or renaming a team in Twenty changes the form with no redeploy. Teams
 with an empty name are skipped.
+
+### Pickup orders
+
+Members submit their monthly order for collection: full name, order ID,
+NeoLife ID, and WhatsApp number. Each submission becomes a **Pickup Order**
+record linked to the member's Person record, matched on the WhatsApp number.
+
+An order is a repeating event, so it is a record of its own rather than fields
+on the person: a member orders again every month, and order fields on a Person
+would overwrite last month's details. An order whose number matches no member
+is still saved and simply left unlinked, so nothing a member submits is lost.
 
 ### How a prospect is stored
 

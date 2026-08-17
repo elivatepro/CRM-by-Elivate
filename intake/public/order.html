@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Order Pickup · Elivate Network</title>
+<link rel="icon" href="/elivate-mark.png" />
+<link rel="stylesheet" href="/form.css" />
+</head>
+<body>
+
+<div class="watermark-frame" aria-hidden="true">
+  <img class="watermark" src="/elivate-mark.png" alt="" />
+</div>
+
+<div class="page">
+  <div class="shell" id="shell">
+    <header class="masthead">
+      <img class="mark" src="/elivate-mark.png" alt="Elivate Network" />
+      <div>
+        <p class="eyebrow">Elivate Network</p>
+        <h1>Submit your order</h1>
+      </div>
+      <p class="lede">
+        Send your order details so the team can collect your products at pickup.
+      </p>
+    </header>
+
+    <form id="form" novalidate>
+      <div class="field">
+        <label for="name">Full name <span class="req" aria-hidden="true">*</span></label>
+        <input id="name" name="name" type="text" autocomplete="name"
+               autocapitalize="words" aria-describedby="name-err" />
+        <p class="err" id="name-err" role="alert"></p>
+      </div>
+
+      <div class="field">
+        <label for="orderId">Order ID <span class="req" aria-hidden="true">*</span></label>
+        <input id="orderId" name="orderId" type="text" autocapitalize="characters"
+               spellcheck="false" aria-describedby="orderId-err" />
+        <p class="err" id="orderId-err" role="alert"></p>
+      </div>
+
+      <div class="field">
+        <label for="neolifeId">NeoLife ID <span class="req" aria-hidden="true">*</span></label>
+        <input id="neolifeId" name="neolifeId" type="text" autocapitalize="characters"
+               spellcheck="false" aria-describedby="neolifeId-err" />
+        <p class="err" id="neolifeId-err" role="alert"></p>
+      </div>
+
+      <div class="field">
+        <label for="phone">WhatsApp number <span class="req" aria-hidden="true">*</span></label>
+        <div class="phone-row" id="phone-row">
+          <span class="dial" aria-hidden="true">🇳🇬 +234</span>
+          <input id="phone" name="phone" type="tel" inputmode="numeric"
+                 autocomplete="tel-national" placeholder="801 234 5678" maxlength="13"
+                 aria-label="WhatsApp number without country code"
+                 aria-describedby="phone-err phone-hint" />
+        </div>
+        <p class="hint" id="phone-hint">Use the number on your member record.</p>
+        <p class="err" id="phone-err" role="alert"></p>
+      </div>
+
+      <p class="status" id="status" role="status" aria-live="polite"></p>
+
+      <button class="submit" id="submit" type="submit">Submit order</button>
+    </form>
+
+    <footer>Elivate Network</footer>
+  </div>
+</div>
+
+<script>
+  const form = document.getElementById('form');
+  const phoneInput = document.getElementById('phone');
+  const phoneRow = document.getElementById('phone-row');
+  const statusEl = document.getElementById('status');
+  const submitBtn = document.getElementById('submit');
+
+  const setError = (id, message) => {
+    const el = document.getElementById(id + '-err');
+    if (el) el.textContent = message || '';
+    const input = document.getElementById(id);
+    if (input) input.setAttribute('aria-invalid', message ? 'true' : 'false');
+    if (id === 'phone') phoneRow.dataset.invalid = message ? 'true' : 'false';
+    return !message;
+  };
+
+  const val = (id) => document.getElementById(id).value.trim();
+
+  const nationalDigits = (raw) => {
+    let d = String(raw).replace(/\D/g, '');
+    if (d.startsWith('234')) d = d.slice(3);
+    return d.replace(/^0+/, '');
+  };
+
+  phoneInput.addEventListener('input', () => {
+    const digits = phoneInput.value.replace(/\D/g, '').slice(0, 11);
+    const lead = digits.startsWith('0') ? 4 : 3;
+    const parts = [digits.slice(0, lead), digits.slice(lead, lead + 3), digits.slice(lead + 3, lead + 7)];
+    phoneInput.value = parts.filter(Boolean).join(' ');
+  });
+
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    statusEl.removeAttribute('data-kind');
+    statusEl.textContent = '';
+
+    const name = val('name');
+    const orderId = val('orderId');
+    const neolifeId = val('neolifeId');
+    const digits = nationalDigits(phoneInput.value);
+
+    let ok = true;
+    ok = setError('name', name.length >= 2 ? '' : 'Enter your full name.') && ok;
+    ok = setError('orderId', orderId ? '' : 'Enter your order ID.') && ok;
+    ok = setError('neolifeId', neolifeId ? '' : 'Enter your NeoLife ID.') && ok;
+
+    let phoneMessage = '';
+    if (!digits) phoneMessage = 'Enter your WhatsApp number.';
+    else if (digits.length !== 10) phoneMessage = 'A Nigerian number has 10 digits after +234.';
+    else if (!/^[789]/.test(digits)) phoneMessage = 'That is not a valid Nigerian mobile number.';
+    ok = setError('phone', phoneMessage) && ok;
+
+    if (!ok) return;
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Submitting…';
+
+    try {
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, orderId, neolifeId, whatsapp: '+234' + digits }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        if (data.errors) {
+          for (const [field, message] of Object.entries(data.errors)) setError(field, message);
+          throw new Error('validation');
+        }
+        throw new Error('failed');
+      }
+
+      const shell = document.getElementById('shell');
+      const done = document.createElement('div');
+      done.className = 'done';
+
+      const heading = document.createElement('h2');
+      heading.textContent = 'Order submitted';
+
+      const detail = document.createElement('p');
+      detail.textContent = 'Your order is on the pickup list. See you at collection.';
+
+      const again = document.createElement('button');
+      again.className = 'again';
+      again.type = 'button';
+      again.textContent = 'Submit another';
+      again.addEventListener('click', () => location.reload());
+
+      done.append(heading, detail, again);
+      shell.replaceChildren(shell.querySelector('.masthead'), done);
+    } catch (error) {
+      if (error.message !== 'validation') {
+        statusEl.dataset.kind = 'error';
+        statusEl.textContent = 'Could not submit your order. Check your connection and try again.';
+      }
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Submit order';
+    }
+  });
+</script>
+</body>
+</html>
