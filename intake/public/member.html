@@ -120,9 +120,33 @@
       <!-- 3. Personal details -->
       <section class="step" data-step="2">
         <div class="field">
-          <label for="dateOfBirth">Date of birth <span class="req" aria-hidden="true">*</span></label>
-          <input id="dateOfBirth" name="dateOfBirth" type="date"
-                 autocomplete="bday" aria-describedby="dateOfBirth-err" />
+          <label id="dob-label" for="dob-trigger">Date of birth <span class="req" aria-hidden="true">*</span></label>
+          <div class="datefield" id="dob-field" data-open="false">
+            <button type="button" class="date-trigger" id="dob-trigger"
+                    aria-haspopup="dialog" aria-expanded="false"
+                    aria-labelledby="dob-label dob-trigger"
+                    aria-describedby="dateOfBirth-err" data-placeholder="true">
+              <span class="date-value" id="dob-value">Select your date of birth</span>
+              <span class="date-icon" aria-hidden="true"></span>
+            </button>
+            <div class="calendar" id="dob-calendar" role="dialog" aria-label="Choose a date">
+              <div class="cal-head">
+                <button type="button" class="cal-nav" id="cal-prev" aria-label="Previous month">&#8249;</button>
+                <div class="cal-selects">
+                  <select class="cal-select" id="cal-month" aria-label="Month"></select>
+                  <select class="cal-select" id="cal-year" aria-label="Year"></select>
+                </div>
+                <button type="button" class="cal-nav" id="cal-next" aria-label="Next month">&#8250;</button>
+              </div>
+              <div class="cal-grid" id="cal-dows"></div>
+              <div class="cal-grid" id="cal-days"></div>
+              <div class="cal-foot">
+                <button type="button" class="cal-action" id="cal-clear">Clear</button>
+                <button type="button" class="cal-action" id="cal-close">Done</button>
+              </div>
+            </div>
+          </div>
+          <input type="hidden" id="dateOfBirth" name="dateOfBirth" value="" />
           <p class="err" id="dateOfBirth-err" role="alert"></p>
         </div>
 
@@ -303,11 +327,15 @@
   });
 
   // --- helpers -------------------------------------------------------------
+  // Some fields are driven by a hidden input behind a visible control, so the
+  // invalid state has to land on the control the member can actually see.
+  const ERROR_TARGETS = { dateOfBirth: 'dob-trigger' };
+
   const setError = (id, message) => {
     const el = document.getElementById(id + '-err');
     if (el) el.textContent = message || '';
-    const input = document.getElementById(id);
-    if (input) input.setAttribute('aria-invalid', message ? 'true' : 'false');
+    const target = document.getElementById(ERROR_TARGETS[id] ?? id);
+    if (target) target.setAttribute('aria-invalid', message ? 'true' : 'false');
     return !message;
   };
 
@@ -326,6 +354,166 @@
     const lead = digits.startsWith('0') ? 4 : 3;
     const parts = [digits.slice(0, lead), digits.slice(lead, lead + 3), digits.slice(lead + 3, lead + 7)];
     phoneInput.value = parts.filter(Boolean).join(' ');
+  });
+
+  // --- date of birth picker ------------------------------------------------
+  const dobField = document.getElementById('dob-field');
+  const dobTrigger = document.getElementById('dob-trigger');
+  const dobValue = document.getElementById('dob-value');
+  const dobHidden = document.getElementById('dateOfBirth');
+  const calMonth = document.getElementById('cal-month');
+  const calYear = document.getElementById('cal-year');
+  const calDays = document.getElementById('cal-days');
+
+  const MONTHS = ['January','February','March','April','May','June',
+                  'July','August','September','October','November','December'];
+  const DOWS = ['S','M','T','W','T','F','S'];
+
+  const today = new Date();
+  const maxYear = today.getFullYear();
+  const minYear = maxYear - 100;
+
+  // Start the calendar where a birth date plausibly is, not on today: opening
+  // on this month would mean paging back decades by hand.
+  let viewYear = maxYear - 25;
+  let viewMonth = 0;
+  let selected = null;
+
+  document.getElementById('cal-dows').replaceChildren(
+    ...DOWS.map((d) => {
+      const cell = document.createElement('div');
+      cell.className = 'cal-dow';
+      cell.textContent = d;
+      return cell;
+    }),
+  );
+
+  MONTHS.forEach((label, i) => calMonth.append(new Option(label, String(i))));
+  for (let y = maxYear; y >= minYear; y -= 1) calYear.append(new Option(String(y), String(y)));
+
+  const iso = (y, m, d) =>
+    `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+
+  const pretty = (y, m, d) => `${d} ${MONTHS[m]} ${y}`;
+
+  const renderCalendar = () => {
+    calMonth.value = String(viewMonth);
+    calYear.value = String(viewYear);
+
+    const first = new Date(viewYear, viewMonth, 1).getDay();
+    const daysIn = new Date(viewYear, viewMonth + 1, 0).getDate();
+    const daysPrev = new Date(viewYear, viewMonth, 0).getDate();
+    const cells = [];
+
+    for (let i = first - 1; i >= 0; i -= 1) cells.push({ day: daysPrev - i, outside: true });
+    for (let d = 1; d <= daysIn; d += 1) cells.push({ day: d, outside: false });
+    while (cells.length % 7 !== 0) cells.push({ day: cells.length % 7, outside: true });
+
+    calDays.replaceChildren(
+      ...cells.map(({ day, outside }) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'cal-day';
+        button.textContent = String(day);
+        button.dataset.outside = outside ? 'true' : 'false';
+
+        if (outside) {
+          button.disabled = true;
+          return button;
+        }
+
+        const value = iso(viewYear, viewMonth, day);
+        const isFuture = new Date(viewYear, viewMonth, day) > today;
+        if (isFuture) button.disabled = true;
+
+        if (
+          today.getFullYear() === viewYear &&
+          today.getMonth() === viewMonth &&
+          today.getDate() === day
+        ) {
+          button.dataset.today = 'true';
+        }
+
+        button.setAttribute('aria-selected', selected === value ? 'true' : 'false');
+        button.addEventListener('click', (event) => {
+          event.stopPropagation();
+          selected = value;
+          dobHidden.value = value;
+          dobValue.textContent = pretty(viewYear, viewMonth, day);
+          dobTrigger.dataset.placeholder = 'false';
+          setError('dateOfBirth', '');
+          renderCalendar();
+          closeCalendar();
+          dobTrigger.focus();
+        });
+
+        return button;
+      }),
+    );
+  };
+
+  const openCalendar = () => {
+    dobField.dataset.open = 'true';
+    dobTrigger.setAttribute('aria-expanded', 'true');
+    renderCalendar();
+  };
+
+  const closeCalendar = () => {
+    dobField.dataset.open = 'false';
+    dobTrigger.setAttribute('aria-expanded', 'false');
+  };
+
+  dobTrigger.addEventListener('click', (event) => {
+    event.stopPropagation();
+    if (dobField.dataset.open === 'true') closeCalendar();
+    else openCalendar();
+  });
+
+  calMonth.addEventListener('change', () => {
+    viewMonth = Number(calMonth.value);
+    renderCalendar();
+  });
+
+  calYear.addEventListener('change', () => {
+    viewYear = Number(calYear.value);
+    renderCalendar();
+  });
+
+  document.getElementById('cal-prev').addEventListener('click', () => {
+    viewMonth -= 1;
+    if (viewMonth < 0) { viewMonth = 11; viewYear = Math.max(minYear, viewYear - 1); }
+    renderCalendar();
+  });
+
+  document.getElementById('cal-next').addEventListener('click', () => {
+    viewMonth += 1;
+    if (viewMonth > 11) { viewMonth = 0; viewYear = Math.min(maxYear, viewYear + 1); }
+    renderCalendar();
+  });
+
+  document.getElementById('cal-clear').addEventListener('click', () => {
+    selected = null;
+    dobHidden.value = '';
+    dobValue.textContent = 'Select your date of birth';
+    dobTrigger.dataset.placeholder = 'true';
+    renderCalendar();
+  });
+
+  document.getElementById('cal-close').addEventListener('click', () => {
+    closeCalendar();
+    dobTrigger.focus();
+  });
+
+  document.addEventListener('click', (event) => {
+    if (dobField.dataset.open === 'true' && !dobField.contains(event.target)) closeCalendar();
+  });
+
+  dobField.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && dobField.dataset.open === 'true') {
+      event.preventDefault();
+      closeCalendar();
+      dobTrigger.focus();
+    }
   });
 
   // --- conditional experience question -------------------------------------
