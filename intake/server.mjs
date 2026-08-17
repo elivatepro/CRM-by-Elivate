@@ -28,6 +28,10 @@ const attachmentFileFieldId =
 const opportunityObject = process.env.TWENTY_OPPORTUNITY_OBJECT ?? 'opportunities';
 const pickupOrderObject = process.env.TWENTY_PICKUP_ORDER_OBJECT ?? 'pickupOrders';
 
+// Hosts allowed to embed the forms in an iframe.
+const frameAncestors =
+  process.env.FRAME_ANCESTORS ?? 'https://crm.elivate.network';
+
 const missingConfig = [];
 if (!apiUrl) missingConfig.push('TWENTY_API_URL');
 if (!apiKey) missingConfig.push('TWENTY_API_KEY');
@@ -709,6 +713,9 @@ const serveStatic = async (entry, response) => {
         ? 'public, max-age=86400'
         : 'no-cache',
       'X-Content-Type-Options': 'nosniff',
+      // The CRM embeds these forms in a page, so framing is allowed from
+      // there and from the forms host itself, but nowhere else.
+      'Content-Security-Policy': `frame-ancestors 'self' ${frameAncestors}`,
     });
     response.end(body);
   } catch {
@@ -723,9 +730,19 @@ const server = createServer(async (request, response) => {
 
   if (route) return route(request, response);
 
-  if (request.method === 'GET') {
+  if (request.method === 'GET' || request.method === 'HEAD') {
     const entry = staticFiles[url.pathname];
-    if (entry) return serveStatic(entry, response);
+    if (entry) {
+      if (request.method === 'HEAD') {
+        response.writeHead(200, {
+          'Content-Type': entry.type,
+          'X-Content-Type-Options': 'nosniff',
+          'Content-Security-Policy': `frame-ancestors 'self' ${frameAncestors}`,
+        });
+        return response.end();
+      }
+      return serveStatic(entry, response);
+    }
   }
 
   response.writeHead(404, { 'Content-Type': 'text/plain' });
