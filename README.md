@@ -56,7 +56,22 @@ the standard library, built from `Dockerfile.intake`.
 | `/healthz` | Health check, reports whether CRM access is configured |
 
 The form's Team dropdown is populated from the **Team** object in the CRM, so
-adding or renaming a team in Twenty changes the form with no redeploy.
+adding or renaming a team in Twenty changes the form with no redeploy. Teams
+with an empty name are skipped.
+
+### How a prospect is stored
+
+Each submission writes two linked records, matching the existing
+Teams ↔ Opportunities relation in the workspace:
+
+1. A **Person** holding the contact details — name, email, and the WhatsApp
+   number in the standard `phones` field.
+2. An **Opportunity** named after the prospect, created at stage `New`, linked
+   to the chosen **Team** and pointing at the person as its Point of Contact.
+
+The person is created first; if the opportunity then fails, the request reports
+an error rather than a false success, so a half-written prospect is visible
+instead of silently lost.
 
 WhatsApp numbers are Nigerian only. Input in any common local format
 (`0801 234 5678`, `801-234-5678`, `+234 801 234 5678`) is stored as E.164

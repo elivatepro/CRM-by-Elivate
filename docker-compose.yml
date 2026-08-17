@@ -61,8 +61,8 @@ services:
       TWENTY_API_KEY: ${TWENTY_API_KEY}
       TWENTY_TEAM_OBJECT: ${TWENTY_TEAM_OBJECT:-teams}
       TWENTY_TEAM_NAME_FIELD: ${TWENTY_TEAM_NAME_FIELD:-name}
-      TWENTY_PROSPECT_OBJECT: ${TWENTY_PROSPECT_OBJECT:-prospects}
-      TWENTY_MEMBER_OBJECT: ${TWENTY_MEMBER_OBJECT:-members}
+      TWENTY_PERSON_OBJECT: ${TWENTY_PERSON_OBJECT:-people}
+      TWENTY_OPPORTUNITY_OBJECT: ${TWENTY_OPPORTUNITY_OBJECT:-opportunities}
     depends_on:
       server:
         condition: service_healthy

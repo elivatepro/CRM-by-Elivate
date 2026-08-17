@@ -17,8 +17,11 @@ const apiKey = process.env.TWENTY_API_KEY ?? '';
 // that named things differently does not require a code change.
 const teamObject = process.env.TWENTY_TEAM_OBJECT ?? 'teams';
 const teamNameField = process.env.TWENTY_TEAM_NAME_FIELD ?? 'name';
-const prospectObject = process.env.TWENTY_PROSPECT_OBJECT ?? 'prospects';
-const memberObject = process.env.TWENTY_MEMBER_OBJECT ?? 'members';
+// A prospect is stored as a Person (contact details) plus an Opportunity
+// linked to the chosen Team, matching the teams <-> opportunities relation
+// already present in the workspace.
+const personObject = process.env.TWENTY_PERSON_OBJECT ?? 'people';
+const opportunityObject = process.env.TWENTY_OPPORTUNITY_OBJECT ?? 'opportunities';
 
 const missingConfig = [];
 if (!apiUrl) missingConfig.push('TWENTY_API_URL');
@@ -200,17 +203,35 @@ const createProspect = async (body) => {
 
   const { firstName, lastName } = splitName(name);
 
-  await twentyRequest(encodeURIComponent(prospectObject), {
+  // 1. The person holds the contact details.
+  const personResponse = await twentyRequest(encodeURIComponent(personObject), {
     method: 'POST',
     body: JSON.stringify({
       name: { firstName, lastName },
-      email: { primaryEmail: email },
-      whatsappNumber: {
+      emails: { primaryEmail: email },
+      phones: {
         primaryPhoneNumber: whatsapp.slice(NIGERIA_DIAL.length),
         primaryPhoneCallingCode: NIGERIA_DIAL,
         primaryPhoneCountryCode: 'NG',
       },
+    }),
+  });
+
+  const personId =
+    personResponse?.data?.createPerson?.id ??
+    personResponse?.data?.id ??
+    personResponse?.id;
+
+  // 2. The opportunity carries the prospect through the team's pipeline.
+  //    If this fails the person is already saved, so surface the failure
+  //    rather than reporting a clean success.
+  await twentyRequest(encodeURIComponent(opportunityObject), {
+    method: 'POST',
+    body: JSON.stringify({
+      name,
+      stage: 'NEW',
       teamId,
+      ...(personId ? { pointOfContactId: personId } : {}),
     }),
   });
 
