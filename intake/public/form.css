@@ -1,65 +1,35 @@
+/* Elivate Network runs a single committed dark theme: the mark is a pale
+   yellow-green designed for a dark canvas, and it loses all contrast on a
+   light ground, so the forms keep the world the logo was drawn for. */
 :root {
-    --brand: #FF7F4F;
-    --brand-ink: #C4451A;
-    --ground: #FAF8F7;
-    --surface: #FFFFFF;
-    --ink: #1A1614;
-    --ink-soft: #6B615B;
-    --ink-faint: #938884;
-    --line: #EDE7E3;
-    --line-strong: #E2D9D4;
-    /* Field edges sit barely above the surface: the input is read by its
-       fill, not by an outline. */
-    --field-line: #F0EAE6;
-    --field-fill: #F7F3F1;
-    --field-line-hover: #E2D9D4;
-    --menu-surface: #FFFFFF;
-    --danger: #B3261E;
-    --ok: #1E6B4F;
-    --watermark-opacity: 0.09;
-  }
+  color-scheme: dark;
 
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-      --brand: #FF8F63;
-      --brand-ink: #FFB694;
-      --ground: #151211;
-      --surface: #1E1A18;
-      --ink: #F5F0ED;
-      --ink-soft: #B5A9A3;
-      --ink-faint: #8B7F79;
-      --line: #2C2522;
-      --line-strong: #3A322D;
-      --field-line: #2A2320;
-      --field-fill: #252020;
-      --field-line-hover: #3A322D;
-      --menu-surface: #272220;
-      --danger: #F2B8B5;
-      --ok: #7BD1AC;
-      --watermark-opacity: 0.10;
-    }
-  }
+  --brand: #CBE236;          /* interactive green: buttons, focus, selection */
+  --brand-ink: #DCE97A;      /* brand-tinted text on dark surfaces */
+  --brand-pale: #F9FFD3;     /* the mark's own colour */
 
-  :root[data-theme="dark"] {
-    --brand: #FF8F63;
-    --brand-ink: #FFB694;
-    --ground: #151211;
-    --surface: #1E1A18;
-    --ink: #F5F0ED;
-    --ink-soft: #B5A9A3;
-    --ink-faint: #8B7F79;
-    --line: #2C2522;
-    --line-strong: #3A322D;
-    --field-line: #2A2320;
-    --field-fill: #252020;
-    --field-line-hover: #3A322D;
-    --menu-surface: #272220;
-    --danger: #F2B8B5;
-    --ok: #7BD1AC;
-    --watermark-opacity: 0.10;
-  }
+  --ground: #0F0F0D;
+  --surface: #17180F;
+  --menu-surface: #1E2015;
 
-  * { box-sizing: border-box; }
+  --ink: #F2F0E6;
+  --ink-soft: #A8AC96;
+  --ink-faint: #7C806E;
+
+  --line: #262819;
+  --line-strong: #343722;
+
+  --field-line: #23251A;
+  --field-fill: #1C1E14;
+  --field-line-hover: #3A3D26;
+
+  --danger: #F5B3A8;
+  --ok: #9BD98C;
+
+  --watermark-opacity: 0.07;
+}
+
+* { box-sizing: border-box; }
 
   html { -webkit-text-size-adjust: 100%; }
 
@@ -266,8 +236,11 @@
     background: var(--menu-surface);
     border: 1px solid var(--line-strong);
     border-radius: 10px;
-    box-shadow: 0 16px 34px -14px rgba(0, 0, 0, 0.45),
-                0 3px 8px -3px rgba(0, 0, 0, 0.25);
+    /* Opaque and lifted: the panel floats over the fields below it, so it
+       must read as a separate surface rather than blending into them. */
+    box-shadow: 0 18px 40px -12px rgba(0, 0, 0, 0.75),
+                0 4px 12px -4px rgba(0, 0, 0, 0.5),
+                0 0 0 1px rgba(0, 0, 0, 0.4);
     max-height: 15rem;
     overflow-y: auto;
     display: none;
@@ -358,7 +331,7 @@
     font: inherit;
     font-weight: 650;
     font-size: 1rem;
-    color: #FFFFFF;
+    color: #0F0F0D;
     background: var(--brand);
     border: 1px solid transparent;
     border-radius: 9px;
@@ -368,7 +341,7 @@
     transition: filter 0.15s ease, transform 0.06s ease;
   }
 
-  button.submit:hover:not(:disabled) { filter: brightness(0.94); }
+  button.submit:hover:not(:disabled) { filter: brightness(1.08); }
   button.submit:active:not(:disabled) { transform: translateY(1px); }
   button.submit:disabled { opacity: 0.55; cursor: not-allowed; }
 

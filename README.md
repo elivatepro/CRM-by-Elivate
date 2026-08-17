@@ -44,13 +44,15 @@ HTML, runtime configuration, APIs, authentication, and user-file routes retain T
 
 ## Intake forms
 
-`intake` is a separate Railway service that serves the public intake forms and
-writes submissions into the CRM. It is a dependency-free Node service using only
+`intake` is a separate Railway service that serves the public **Elivate
+Network** intake forms and writes submissions into the CRM. It is a dependency-free Node service using only
 the standard library, built from `Dockerfile.intake`.
 
 | Route | Purpose |
 | --- | --- |
-| `/` or `/prospect` | New-prospect form |
+| `/` | Index listing the available forms |
+| `/prospect` | New-prospect form |
+| `/member` | Join Elivate Network member registration |
 | `GET /api/teams` | Team names read live from the CRM |
 | `POST /api/prospects` | Creates a prospect record |
 | `/healthz` | Health check, reports whether CRM access is configured |
