@@ -28,6 +28,22 @@ const attachmentFileFieldId =
 const opportunityObject = process.env.TWENTY_OPPORTUNITY_OBJECT ?? 'opportunities';
 const pickupOrderObject = process.env.TWENTY_PICKUP_ORDER_OBJECT ?? 'pickupOrders';
 
+// Records created through the forms are attributed to this workspace member,
+// so the CRM shows a person rather than the API key's name.
+const recordAuthorId = process.env.TWENTY_RECORD_AUTHOR_ID ?? '';
+const recordAuthorName = process.env.TWENTY_RECORD_AUTHOR_NAME ?? '';
+
+const createdBy = () =>
+  recordAuthorId
+    ? {
+        createdBy: {
+          source: 'MANUAL',
+          workspaceMemberId: recordAuthorId,
+          name: recordAuthorName,
+        },
+      }
+    : {};
+
 // Hosts allowed to embed the forms in an iframe.
 const frameAncestors =
   process.env.FRAME_ANCESTORS ?? 'https://crm.elivate.network';
@@ -225,6 +241,7 @@ const createProspect = async (body) => {
       },
       // Registering later upgrades this same person to Registered.
       memberStatus: 'PROSPECT',
+      ...createdBy(),
     }),
   });
 
@@ -243,6 +260,7 @@ const createProspect = async (body) => {
       stage: 'NEW',
       teamId,
       ...(personId ? { pointOfContactId: personId } : {}),
+      ...createdBy(),
     }),
   });
 
@@ -478,6 +496,7 @@ const registerMember = async (body) => {
     memberStatus: 'REGISTERED',
     termsAcceptedAt: now,
     registeredAt: now,
+    ...createdBy(),
   };
 
   const existing = await findExistingPerson(
@@ -598,6 +617,7 @@ const submitPickupOrder = async (body) => {
       },
       submittedAt: new Date().toISOString(),
       ...(personId ? { memberId: personId } : {}),
+      ...createdBy(),
     }),
   });
 
