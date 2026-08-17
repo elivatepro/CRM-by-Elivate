@@ -1,0 +1,602 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Join Elivate Network</title>
+<link rel="icon" href="/elivate-mark.png" />
+<link rel="stylesheet" href="/form.css" />
+</head>
+<body>
+
+<div class="watermark-frame" aria-hidden="true">
+  <img class="watermark" src="/elivate-mark.png" alt="" />
+</div>
+
+<div class="page">
+  <div class="shell" id="shell">
+    <header class="masthead">
+      <img class="mark" src="/elivate-mark.png" alt="Elivate" />
+      <div>
+        <p class="eyebrow">CRM by Elivate</p>
+        <h1>Join Elivate Network</h1>
+      </div>
+    </header>
+
+    <div class="progress" id="progress" hidden>
+      <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+      <span class="progress-label" id="progress-label">Step 1 of 6</span>
+    </div>
+
+    <form id="form" novalidate>
+
+      <!-- 1. Welcome -->
+      <section class="step" data-step="0" data-current="true">
+        <p class="intro-body">
+          You're about to take an exciting step forward. While filling out this
+          form, you can move back and forward between steps at any time.
+        </p>
+        <p class="intro-body">
+          No pressure — this isn't a test, just a simple step toward something
+          great. Take your time, answer honestly, and give it your best.
+        </p>
+        <button class="submit" type="button" data-next>Let's start</button>
+      </section>
+
+      <!-- 2. Experience + identity -->
+      <section class="step" data-step="1">
+        <div class="field">
+          <span class="step-heading" id="exp-label">Have you ever been involved in this business before?<span class="req" aria-hidden="true">*</span></span>
+          <div class="choice-row" role="radiogroup" aria-labelledby="exp-label">
+            <label class="choice"><input type="radio" name="experienced" value="YES" /><span>Yes</span></label>
+            <label class="choice"><input type="radio" name="experienced" value="NO" /><span>No</span></label>
+          </div>
+          <p class="err" id="experienced-err" role="alert"></p>
+        </div>
+
+        <div class="field" id="experience-detail" hidden>
+          <label for="priorExperience">Tell us about your experience <span class="req" aria-hidden="true">*</span></label>
+          <textarea id="priorExperience" name="priorExperience"
+                    placeholder="Tell us about your experience."
+                    aria-describedby="priorExperience-err"></textarea>
+          <p class="err" id="priorExperience-err" role="alert"></p>
+        </div>
+
+        <div class="field">
+          <span id="title-label" class="field-label">Title <span class="req" aria-hidden="true">*</span></span>
+          <div class="choice-row" role="radiogroup" aria-labelledby="title-label">
+            <label class="choice"><input type="radio" name="title" value="MR" /><span>Mr</span></label>
+            <label class="choice"><input type="radio" name="title" value="MRS" /><span>Mrs</span></label>
+            <label class="choice"><input type="radio" name="title" value="MISS" /><span>Miss</span></label>
+          </div>
+          <p class="err" id="title-err" role="alert"></p>
+        </div>
+
+        <div class="field">
+          <label for="firstName">Full name <span class="req" aria-hidden="true">*</span></label>
+          <div class="name-row">
+            <div>
+              <input id="firstName" name="firstName" type="text" placeholder="First Name"
+                     autocomplete="given-name" autocapitalize="words" aria-label="First name"
+                     aria-describedby="firstName-err" />
+              <p class="err" id="firstName-err" role="alert"></p>
+            </div>
+            <div>
+              <input id="lastName" name="lastName" type="text" placeholder="Last Name"
+                     autocomplete="family-name" autocapitalize="words" aria-label="Last name"
+                     aria-describedby="lastName-err" />
+              <p class="err" id="lastName-err" role="alert"></p>
+            </div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="email">Email <span class="req" aria-hidden="true">*</span></label>
+          <input id="email" name="email" type="email" placeholder="Email Address"
+                 inputmode="email" autocomplete="email" autocapitalize="off"
+                 spellcheck="false" aria-describedby="email-err" />
+          <p class="err" id="email-err" role="alert"></p>
+        </div>
+
+        <div class="field">
+          <label for="phone">Phone number <span class="req" aria-hidden="true">*</span></label>
+          <div class="phone-row" id="phone-row">
+            <span class="dial" aria-hidden="true">🇳🇬 +234</span>
+            <input id="phone" name="phone" type="tel" inputmode="numeric"
+                   autocomplete="tel-national" placeholder="801 234 5678" maxlength="13"
+                   aria-label="WhatsApp number without country code"
+                   aria-describedby="phone-err phone-hint" />
+          </div>
+          <p class="hint" id="phone-hint">This must be your WhatsApp number.</p>
+          <p class="err" id="phone-err" role="alert"></p>
+        </div>
+
+        <div class="nav-row">
+          <button class="back" type="button" data-back>Back</button>
+          <button class="submit" type="button" data-next>Next</button>
+        </div>
+      </section>
+
+      <!-- 3. Personal details -->
+      <section class="step" data-step="2">
+        <div class="field">
+          <label for="dateOfBirth">Date of birth <span class="req" aria-hidden="true">*</span></label>
+          <input id="dateOfBirth" name="dateOfBirth" type="date"
+                 autocomplete="bday" aria-describedby="dateOfBirth-err" />
+          <p class="err" id="dateOfBirth-err" role="alert"></p>
+        </div>
+
+        <div class="field">
+          <span id="gender-label" class="field-label">Gender <span class="req" aria-hidden="true">*</span></span>
+          <div class="choice-row" role="radiogroup" aria-labelledby="gender-label">
+            <label class="choice"><input type="radio" name="gender" value="MALE" /><span>Male</span></label>
+            <label class="choice"><input type="radio" name="gender" value="FEMALE" /><span>Female</span></label>
+          </div>
+          <p class="err" id="gender-err" role="alert"></p>
+        </div>
+
+        <div class="field">
+          <label for="addressStreet">Residential address <span class="req" aria-hidden="true">*</span></label>
+          <input id="addressStreet" name="addressStreet" type="text"
+                 placeholder="Street No and Address" autocomplete="street-address"
+                 aria-label="Street number and address" aria-describedby="addressStreet-err" />
+          <p class="err" id="addressStreet-err" role="alert"></p>
+          <input id="addressCity" name="addressCity" type="text" placeholder="City"
+                 autocomplete="address-level2" aria-label="City" aria-describedby="addressCity-err" />
+          <p class="err" id="addressCity-err" role="alert"></p>
+          <input id="addressState" name="addressState" type="text" placeholder="State"
+                 autocomplete="address-level1" aria-label="State" aria-describedby="addressState-err" />
+          <p class="err" id="addressState-err" role="alert"></p>
+          <input id="addressCountry" name="addressCountry" type="text" placeholder="Country"
+                 autocomplete="country-name" value="Nigeria" aria-label="Country"
+                 aria-describedby="addressCountry-err" />
+          <p class="err" id="addressCountry-err" role="alert"></p>
+        </div>
+
+        <div class="nav-row">
+          <button class="back" type="button" data-back>Back</button>
+          <button class="submit" type="button" data-next>Next</button>
+        </div>
+      </section>
+
+      <!-- 4. Work -->
+      <section class="step" data-step="3">
+        <div class="field">
+          <label for="occupation">What do you currently do for work? <span class="req" aria-hidden="true">*</span></label>
+          <textarea id="occupation" name="occupation"
+                    placeholder="Tell us a bit about your daily life."
+                    aria-describedby="occupation-err"></textarea>
+          <p class="err" id="occupation-err" role="alert"></p>
+        </div>
+
+        <div class="nav-row">
+          <button class="back" type="button" data-back>Back</button>
+          <button class="submit" type="button" data-next>Next</button>
+        </div>
+      </section>
+
+      <!-- 5. Sponsor, training, photo -->
+      <section class="step" data-step="4">
+        <div class="field">
+          <label for="sponsor">Sponsor <span class="req" aria-hidden="true">*</span></label>
+          <input id="sponsor" name="sponsor" type="text"
+                 placeholder="Who told you about this business?"
+                 autocapitalize="words" aria-describedby="sponsor-err" />
+          <p class="err" id="sponsor-err" role="alert"></p>
+        </div>
+
+        <div class="field">
+          <label for="upline">Upline <span class="req" aria-hidden="true">*</span></label>
+          <input id="upline" name="upline" type="text"
+                 placeholder="Ask your sponsor if you don't know"
+                 autocapitalize="words" aria-describedby="upline-err" />
+          <p class="err" id="upline-err" role="alert"></p>
+        </div>
+
+        <div class="field">
+          <span id="training-label" class="field-label">
+            Our team trainings happen between 4PM and 7PM, do you agree to commit
+            to these hours? <span class="req" aria-hidden="true">*</span>
+          </span>
+          <div class="choice-row" role="radiogroup" aria-labelledby="training-label">
+            <label class="choice"><input type="radio" name="trainingCommitment" value="YES" /><span>Yes</span></label>
+            <label class="choice"><input type="radio" name="trainingCommitment" value="NO" /><span>No</span></label>
+          </div>
+          <p class="err" id="trainingCommitment-err" role="alert"></p>
+        </div>
+
+        <div class="field">
+          <span class="field-label">Upload a clear photo of yourself <span class="req" aria-hidden="true">*</span></span>
+          <label class="upload" id="upload" data-has-file="false">
+            <img class="upload-preview" id="photo-preview" alt="" />
+            <span class="upload-label" id="upload-label">Choose a photo</span>
+            <span class="upload-hint">JPG or PNG, up to 8 MB.</span>
+            <input type="file" id="photo" name="photo" accept="image/*"
+                   aria-describedby="photo-err" />
+          </label>
+          <p class="err" id="photo-err" role="alert"></p>
+        </div>
+
+        <div class="nav-row">
+          <button class="back" type="button" data-back>Back</button>
+          <button class="submit" type="button" data-next>Next</button>
+        </div>
+      </section>
+
+      <!-- 6. Terms -->
+      <section class="step" data-step="5">
+        <p class="step-heading">Terms and conditions</p>
+        <p class="hint">Please read and accept each term to continue.</p>
+        <div class="terms" id="terms"></div>
+        <p class="err" id="terms-err" role="alert"></p>
+
+        <div class="nav-row">
+          <button class="back" type="button" data-back>Back</button>
+          <button class="submit" type="button" data-next>Next</button>
+        </div>
+      </section>
+
+      <!-- 7. Signature -->
+      <section class="step" data-step="6">
+        <p class="step-heading">Sign below to confirm your commitment to the above terms</p>
+        <div class="signature-wrap" id="signature-wrap">
+          <canvas class="signature-pad" id="signature"
+                  aria-label="Signature drawing area"></canvas>
+          <div class="signature-baseline" aria-hidden="true"></div>
+          <div class="signature-caption" aria-hidden="true">Signature</div>
+        </div>
+        <div class="signature-actions">
+          <button class="ghost" type="button" id="clear-signature">Clear</button>
+        </div>
+        <p class="err" id="signature-err" role="alert"></p>
+
+        <p class="status" id="status" role="status" aria-live="polite"></p>
+
+        <div class="nav-row">
+          <button class="back" type="button" data-back>Back</button>
+          <button class="submit" type="submit" id="submit">Submit</button>
+        </div>
+      </section>
+
+    </form>
+
+    <footer>Saved directly into CRM by Elivate.</footer>
+  </div>
+</div>
+
+<script>
+  const TERMS = [
+    'You must always show up for training every day. Being absent for a training session without due and approved permission will attract immediate suspension from the team.',
+    'All assignments, Projects or tasks given should be done with seriousness. Failure to do a project or submit a task in due time will attract disciplinary actions.',
+    'You must not disrespect any team member/admins. This is a wrong attitude and will attract Punishment and suspension from the community.',
+    'Registration of a new member shall be at the prerogative of the Team leader. He shall determine the requirements for registering the new member at his discretion.',
+    'As a member, you must not engage in any form of fraud, scam, or any despicable act. If found guilty the team leader reserves the right to hand you over to the police.',
+    'Meetings: Weekly: 4:00PM, Mondays through to Fridays, 11am on Saturdays.',
+    'Amendments: The team leader has the power to amend any part of this Guiding rule whenever they deem it fit to do so.',
+  ];
+
+  const form = document.getElementById('form');
+  const steps = [...document.querySelectorAll('.step')];
+  const progress = document.getElementById('progress');
+  const progressFill = document.getElementById('progress-fill');
+  const progressLabel = document.getElementById('progress-label');
+  const statusEl = document.getElementById('status');
+  const submitBtn = document.getElementById('submit');
+  const phoneInput = document.getElementById('phone');
+  const phoneRow = document.getElementById('phone-row');
+
+  let current = 0;
+
+  // --- terms ---------------------------------------------------------------
+  const termsHost = document.getElementById('terms');
+  TERMS.forEach((text, i) => {
+    const label = document.createElement('label');
+    label.className = 'term';
+    const box = document.createElement('input');
+    box.type = 'checkbox';
+    box.name = 'term';
+    box.dataset.index = String(i);
+    const span = document.createElement('span');
+    span.textContent = text;
+    label.append(box, span);
+    termsHost.append(label);
+  });
+
+  // --- helpers -------------------------------------------------------------
+  const setError = (id, message) => {
+    const el = document.getElementById(id + '-err');
+    if (el) el.textContent = message || '';
+    const input = document.getElementById(id);
+    if (input) input.setAttribute('aria-invalid', message ? 'true' : 'false');
+    return !message;
+  };
+
+  const val = (id) => (document.getElementById(id)?.value ?? '').trim();
+  const picked = (name) => form.querySelector(`input[name="${name}"]:checked`)?.value ?? '';
+  const emailOk = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v);
+
+  const nationalDigits = (raw) => {
+    let d = String(raw).replace(/\D/g, '');
+    if (d.startsWith('234')) d = d.slice(3);
+    return d.replace(/^0+/, '');
+  };
+
+  phoneInput.addEventListener('input', () => {
+    const digits = phoneInput.value.replace(/\D/g, '').slice(0, 11);
+    const lead = digits.startsWith('0') ? 4 : 3;
+    const parts = [digits.slice(0, lead), digits.slice(lead, lead + 3), digits.slice(lead + 3, lead + 7)];
+    phoneInput.value = parts.filter(Boolean).join(' ');
+  });
+
+  // --- conditional experience question -------------------------------------
+  const experienceDetail = document.getElementById('experience-detail');
+  form.querySelectorAll('input[name="experienced"]').forEach((radio) => {
+    radio.addEventListener('change', () => {
+      experienceDetail.hidden = radio.value !== 'YES';
+      if (experienceDetail.hidden) setError('priorExperience', '');
+    });
+  });
+
+  // --- photo ---------------------------------------------------------------
+  const photoInput = document.getElementById('photo');
+  const photoPreview = document.getElementById('photo-preview');
+  const uploadBox = document.getElementById('upload');
+  const uploadLabel = document.getElementById('upload-label');
+  let photoDataUrl = '';
+
+  photoInput.addEventListener('change', () => {
+    const file = photoInput.files?.[0];
+    if (!file) return;
+
+    if (file.size > 8 * 1024 * 1024) {
+      setError('photo', 'That photo is larger than 8 MB. Please choose a smaller one.');
+      photoInput.value = '';
+      return;
+    }
+
+    setError('photo', '');
+    const reader = new FileReader();
+    reader.addEventListener('load', () => {
+      // Downscale before upload: phone photos are far larger than needed.
+      const img = new Image();
+      img.addEventListener('load', () => {
+        const max = 900;
+        const scale = Math.min(1, max / Math.max(img.width, img.height));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+        photoDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+        photoPreview.src = photoDataUrl;
+        uploadBox.dataset.hasFile = 'true';
+        uploadLabel.textContent = 'Photo selected — tap to change';
+      });
+      img.src = String(reader.result);
+    });
+    reader.readAsDataURL(file);
+  });
+
+  // --- signature -----------------------------------------------------------
+  const canvas = document.getElementById('signature');
+  const sigWrap = document.getElementById('signature-wrap');
+  const ctx = canvas.getContext('2d');
+  let drawing = false;
+  let hasSignature = false;
+
+  const sizeCanvas = () => {
+    const rect = canvas.getBoundingClientRect();
+    const ratio = window.devicePixelRatio || 1;
+    const data = hasSignature ? canvas.toDataURL() : null;
+    canvas.width = Math.round(rect.width * ratio);
+    canvas.height = Math.round(rect.height * ratio);
+    ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+    ctx.lineWidth = 2.2;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.strokeStyle = getComputedStyle(document.body).getPropertyValue('color').trim() || '#000';
+    if (data) {
+      const img = new Image();
+      img.addEventListener('load', () => ctx.drawImage(img, 0, 0, rect.width, rect.height));
+      img.src = data;
+    }
+  };
+
+  const pointFrom = (event) => {
+    const rect = canvas.getBoundingClientRect();
+    const source = event.touches?.[0] ?? event;
+    return { x: source.clientX - rect.left, y: source.clientY - rect.top };
+  };
+
+  const startDraw = (event) => {
+    event.preventDefault();
+    drawing = true;
+    const { x, y } = pointFrom(event);
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+  };
+
+  const moveDraw = (event) => {
+    if (!drawing) return;
+    event.preventDefault();
+    const { x, y } = pointFrom(event);
+    ctx.lineTo(x, y);
+    ctx.stroke();
+    hasSignature = true;
+    sigWrap.dataset.invalid = 'false';
+    setError('signature', '');
+  };
+
+  const endDraw = () => { drawing = false; };
+
+  canvas.addEventListener('pointerdown', startDraw);
+  canvas.addEventListener('pointermove', moveDraw);
+  window.addEventListener('pointerup', endDraw);
+  canvas.addEventListener('pointerleave', endDraw);
+
+  document.getElementById('clear-signature').addEventListener('click', () => {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    hasSignature = false;
+  });
+
+  window.addEventListener('resize', sizeCanvas);
+
+  // --- step validation -----------------------------------------------------
+  const validators = {
+    1: () => {
+      let ok = true;
+      const exp = picked('experienced');
+      ok = setError('experienced', exp ? '' : 'Please choose an answer.') && ok;
+      if (exp === 'YES') {
+        ok = setError('priorExperience',
+          val('priorExperience').length >= 3 ? '' : 'Tell us about your experience.') && ok;
+      }
+      ok = setError('title', picked('title') ? '' : 'Choose a title.') && ok;
+      ok = setError('firstName', val('firstName').length >= 2 ? '' : 'Enter your first name.') && ok;
+      ok = setError('lastName', val('lastName').length >= 2 ? '' : 'Enter your last name.') && ok;
+      ok = setError('email', emailOk(val('email')) ? '' : 'Enter a valid email address.') && ok;
+
+      const digits = nationalDigits(phoneInput.value);
+      let msg = '';
+      if (!digits) msg = 'Enter your WhatsApp number.';
+      else if (digits.length !== 10) msg = 'A Nigerian number has 10 digits after +234.';
+      else if (!/^[789]/.test(digits)) msg = 'That is not a valid Nigerian mobile number.';
+      phoneRow.dataset.invalid = msg ? 'true' : 'false';
+      ok = setError('phone', msg) && ok;
+      return ok;
+    },
+    2: () => {
+      let ok = true;
+      ok = setError('dateOfBirth', val('dateOfBirth') ? '' : 'Enter your date of birth.') && ok;
+      ok = setError('gender', picked('gender') ? '' : 'Choose a gender.') && ok;
+      ok = setError('addressStreet', val('addressStreet') ? '' : 'Enter your street address.') && ok;
+      ok = setError('addressCity', val('addressCity') ? '' : 'Enter your city.') && ok;
+      ok = setError('addressState', val('addressState') ? '' : 'Enter your state.') && ok;
+      ok = setError('addressCountry', val('addressCountry') ? '' : 'Enter your country.') && ok;
+      return ok;
+    },
+    3: () => setError('occupation',
+      val('occupation').length >= 3 ? '' : 'Tell us what you currently do for work.'),
+    4: () => {
+      let ok = true;
+      ok = setError('sponsor', val('sponsor') ? '' : 'Enter your sponsor.') && ok;
+      ok = setError('upline', val('upline') ? '' : 'Enter your upline.') && ok;
+      ok = setError('trainingCommitment',
+        picked('trainingCommitment') ? '' : 'Please choose an answer.') && ok;
+      ok = setError('photo', photoDataUrl ? '' : 'Please upload a clear photo of yourself.') && ok;
+      return ok;
+    },
+    5: () => {
+      const boxes = [...form.querySelectorAll('input[name="term"]')];
+      const all = boxes.every((b) => b.checked);
+      return setError('terms', all ? '' : 'Please accept every term to continue.');
+    },
+  };
+
+  // --- navigation ----------------------------------------------------------
+  const showStep = (index) => {
+    current = index;
+    steps.forEach((s, i) => (s.dataset.current = i === index ? 'true' : 'false'));
+    progress.hidden = index === 0;
+    const pct = Math.round((index / (steps.length - 1)) * 100);
+    progressFill.style.width = pct + '%';
+    progressLabel.textContent = `Step ${index} of ${steps.length - 1}`;
+    if (index === steps.length - 1) requestAnimationFrame(sizeCanvas);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  form.querySelectorAll('[data-next]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const check = validators[current];
+      if (check && !check()) return;
+      showStep(Math.min(current + 1, steps.length - 1));
+    });
+  });
+
+  form.querySelectorAll('[data-back]').forEach((button) => {
+    button.addEventListener('click', () => showStep(Math.max(current - 1, 0)));
+  });
+
+  // --- submit --------------------------------------------------------------
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    statusEl.removeAttribute('data-kind');
+    statusEl.textContent = '';
+
+    if (!hasSignature) {
+      sigWrap.dataset.invalid = 'true';
+      setError('signature', 'Please sign to confirm your commitment.');
+      return;
+    }
+
+    const payload = {
+      experienced: picked('experienced'),
+      priorExperience: picked('experienced') === 'YES' ? val('priorExperience') : '',
+      title: picked('title'),
+      firstName: val('firstName'),
+      lastName: val('lastName'),
+      email: val('email'),
+      whatsapp: '+234' + nationalDigits(phoneInput.value),
+      dateOfBirth: val('dateOfBirth'),
+      gender: picked('gender'),
+      addressStreet: val('addressStreet'),
+      addressCity: val('addressCity'),
+      addressState: val('addressState'),
+      addressCountry: val('addressCountry'),
+      occupation: val('occupation'),
+      sponsor: val('sponsor'),
+      upline: val('upline'),
+      trainingCommitment: picked('trainingCommitment'),
+      termsAccepted: [...form.querySelectorAll('input[name="term"]')].map((b) => b.checked),
+      signature: canvas.toDataURL('image/png'),
+      photo: photoDataUrl,
+    };
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Submitting…';
+
+    try {
+      const response = await fetch('/api/members', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        if (data.errors) {
+          for (const [field, message] of Object.entries(data.errors)) setError(field, message);
+          throw new Error('validation');
+        }
+        throw new Error('failed');
+      }
+
+      const shell = document.getElementById('shell');
+      const done = document.createElement('div');
+      done.className = 'done';
+
+      const heading = document.createElement('h2');
+      heading.textContent = 'Application received';
+
+      const detail = document.createElement('p');
+      detail.textContent = 'Your application has been received, pay attention to your email.';
+
+      done.append(heading, detail);
+      shell.replaceChildren(shell.querySelector('.masthead'), done);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (error) {
+      if (error.message === 'validation') {
+        statusEl.dataset.kind = 'error';
+        statusEl.textContent = 'Some answers need attention. Please check the earlier steps.';
+      } else {
+        statusEl.dataset.kind = 'error';
+        statusEl.textContent = 'Could not submit your registration. Check your connection and try again.';
+      }
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Submit';
+    }
+  });
+
+  sizeCanvas();
+</script>
+</body>
+</html>

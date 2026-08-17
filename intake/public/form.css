@@ -1,0 +1,741 @@
+:root {
+    --brand: #FF7F4F;
+    --brand-ink: #C4451A;
+    --ground: #FAF8F7;
+    --surface: #FFFFFF;
+    --ink: #1A1614;
+    --ink-soft: #6B615B;
+    --ink-faint: #938884;
+    --line: #EDE7E3;
+    --line-strong: #E2D9D4;
+    /* Field edges sit barely above the surface: the input is read by its
+       fill, not by an outline. */
+    --field-line: #F0EAE6;
+    --field-fill: #F7F3F1;
+    --field-line-hover: #E2D9D4;
+    --menu-surface: #FFFFFF;
+    --danger: #B3261E;
+    --ok: #1E6B4F;
+    --watermark-opacity: 0.09;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --brand: #FF8F63;
+      --brand-ink: #FFB694;
+      --ground: #151211;
+      --surface: #1E1A18;
+      --ink: #F5F0ED;
+      --ink-soft: #B5A9A3;
+      --ink-faint: #8B7F79;
+      --line: #2C2522;
+      --line-strong: #3A322D;
+      --field-line: #2A2320;
+      --field-fill: #252020;
+      --field-line-hover: #3A322D;
+      --menu-surface: #272220;
+      --danger: #F2B8B5;
+      --ok: #7BD1AC;
+      --watermark-opacity: 0.10;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --brand: #FF8F63;
+    --brand-ink: #FFB694;
+    --ground: #151211;
+    --surface: #1E1A18;
+    --ink: #F5F0ED;
+    --ink-soft: #B5A9A3;
+    --ink-faint: #8B7F79;
+    --line: #2C2522;
+    --line-strong: #3A322D;
+    --field-line: #2A2320;
+    --field-fill: #252020;
+    --field-line-hover: #3A322D;
+    --menu-surface: #272220;
+    --danger: #F2B8B5;
+    --ok: #7BD1AC;
+    --watermark-opacity: 0.10;
+  }
+
+  * { box-sizing: border-box; }
+
+  html { -webkit-text-size-adjust: 100%; }
+
+  body {
+    margin: 0;
+    min-height: 100svh;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+      "Helvetica Neue", Arial, sans-serif;
+    font-size: 16px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  /* Large brand mark anchored bottom-right, behind the content. Lives in a
+     clipping wrapper so its bleed off-canvas can never widen the viewport. */
+  .watermark-frame {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .watermark {
+    position: absolute;
+    right: -6vmin;
+    bottom: -8vmin;
+    width: clamp(300px, 58vmin, 680px);
+    height: auto;
+    opacity: var(--watermark-opacity);
+    user-select: none;
+  }
+
+  .page {
+    position: relative;
+    z-index: 1;
+    min-height: 100svh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: clamp(1.75rem, 6vw, 4rem) clamp(1rem, 5vw, 2rem)
+             calc(clamp(2.5rem, 8vw, 5rem) + env(safe-area-inset-bottom));
+    gap: clamp(1.5rem, 4vw, 2.25rem);
+  }
+
+  .shell {
+    width: 100%;
+    max-width: 34rem;
+    display: flex;
+    flex-direction: column;
+    gap: clamp(1.5rem, 4vw, 2rem);
+  }
+
+  /* Centered mark + headline */
+  header.masthead {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 0.85rem;
+  }
+
+  .mark {
+    width: clamp(64px, 15vw, 80px);
+    height: auto;
+    display: block;
+  }
+
+  .eyebrow {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin: 0;
+  }
+
+  h1 {
+    font-size: clamp(1.5rem, 6vw, 2rem);
+    font-weight: 640;
+    letter-spacing: -0.022em;
+    line-height: 1.15;
+    text-wrap: balance;
+    margin: 0.3rem 0 0;
+  }
+
+  .lede {
+    color: var(--ink-soft);
+    margin: 0;
+    max-width: 30rem;
+    text-wrap: pretty;
+  }
+
+  form {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: clamp(1.15rem, 4.5vw, 1.75rem);
+    display: flex;
+    flex-direction: column;
+    gap: 1.15rem;
+  }
+
+  .field { display: flex; flex-direction: column; gap: 0.4rem; }
+
+  /* The open dropdown floats over the fields below it rather than pushing
+     them down, so raise its row above its siblings. */
+  .field:has(.select[data-open="true"]) { position: relative; z-index: 30; }
+
+  label {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  .req { color: var(--brand-ink); margin-left: 0.15rem; }
+
+  .hint { font-size: 0.8125rem; color: var(--ink-faint); margin: 0; }
+
+  input, .select-trigger {
+    font: inherit;
+    font-size: 1rem; /* keeps iOS from zooming on focus */
+    color: var(--ink);
+    background: var(--field-fill);
+    border: 1px solid var(--field-line);
+    border-radius: 9px;
+    padding: 0.7rem 0.8rem;
+    width: 100%;
+    min-height: 46px;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+  }
+
+  input:hover, .select-trigger:hover { border-color: var(--field-line-hover); }
+
+  input::placeholder { color: var(--ink-faint); }
+
+  input:focus-visible, button:focus-visible, .select-trigger:focus-visible {
+    outline: 2px solid var(--brand);
+    outline-offset: 2px;
+    border-color: var(--brand);
+  }
+
+  input[aria-invalid="true"], .select-trigger[aria-invalid="true"] {
+    border-color: var(--danger);
+  }
+
+  .err { font-size: 0.8125rem; color: var(--danger); margin: 0; }
+  .err:empty { display: none; }
+
+  /* Custom dropdown. A native select renders its list through the OS, which
+     cannot be styled to match the form, so the list is built in the page. */
+  .select { position: relative; }
+
+  .select-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
+    text-align: left;
+    cursor: pointer;
+    padding-right: 0.75rem;
+  }
+
+  .select-trigger[data-placeholder="true"] .select-value { color: var(--ink-faint); }
+
+  .select-trigger:disabled {
+    cursor: not-allowed;
+    color: var(--ink-faint);
+  }
+
+  .select-value {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .select-caret {
+    flex: 0 0 auto;
+    width: 0.62rem;
+    height: 0.62rem;
+    border-right: 1.8px solid var(--ink-faint);
+    border-bottom: 1.8px solid var(--ink-faint);
+    transform: translateY(-0.16em) rotate(45deg);
+    transition: transform 0.18s ease;
+  }
+
+  .select[data-open="true"] .select-caret {
+    transform: translateY(0.1em) rotate(225deg);
+  }
+
+  .select-list {
+    position: absolute;
+    top: calc(100% + 0.35rem);
+    left: 0;
+    right: 0;
+    z-index: 20;
+    margin: 0;
+    padding: 0.3rem;
+    list-style: none;
+    background: var(--menu-surface);
+    border: 1px solid var(--line-strong);
+    border-radius: 10px;
+    box-shadow: 0 16px 34px -14px rgba(0, 0, 0, 0.45),
+                0 3px 8px -3px rgba(0, 0, 0, 0.25);
+    max-height: 15rem;
+    overflow-y: auto;
+    display: none;
+  }
+
+  .select[data-open="true"] .select-list { display: block; }
+
+  .select-option {
+    padding: 0.6rem 0.7rem;
+    border-radius: 7px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  .select-option[data-active="true"] { background: var(--field-fill); }
+
+  .select-option[aria-selected="true"] {
+    color: var(--brand-ink);
+    font-weight: 600;
+  }
+
+  .select-option[aria-selected="true"]::after {
+    content: "";
+    flex: 0 0 auto;
+    width: 0.3rem;
+    height: 0.6rem;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    transform: rotate(45deg) translateY(-0.06em);
+  }
+
+  .select-empty {
+    padding: 0.6rem 0.7rem;
+    font-size: 0.9rem;
+    color: var(--ink-faint);
+  }
+
+  /* Fixed +234 prefix: Nigerian numbers only. */
+  .phone-row {
+    display: flex;
+    align-items: stretch;
+    border: 1px solid var(--field-line);
+    border-radius: 9px;
+    overflow: hidden;
+    background: var(--field-fill);
+    transition: border-color 0.15s ease;
+  }
+
+  .phone-row:hover { border-color: var(--field-line-hover); }
+
+  .phone-row:focus-within {
+    outline: 2px solid var(--brand);
+    outline-offset: 2px;
+    border-color: var(--brand);
+  }
+
+  .phone-row[data-invalid="true"] { border-color: var(--danger); }
+
+  .dial {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0 0.7rem 0 0.8rem;
+    background: transparent;
+    border-right: 1px solid var(--field-line);
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--ink-soft);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .phone-row input {
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.01em;
+  }
+
+  .phone-row input:focus-visible { outline: none; }
+
+  button.submit {
+    font: inherit;
+    font-weight: 650;
+    font-size: 1rem;
+    color: #FFFFFF;
+    background: var(--brand);
+    border: 1px solid transparent;
+    border-radius: 9px;
+    padding: 0.85rem 1rem;
+    min-height: 48px;
+    cursor: pointer;
+    transition: filter 0.15s ease, transform 0.06s ease;
+  }
+
+  button.submit:hover:not(:disabled) { filter: brightness(0.94); }
+  button.submit:active:not(:disabled) { transform: translateY(1px); }
+  button.submit:disabled { opacity: 0.55; cursor: not-allowed; }
+
+  .status {
+    font-size: 0.875rem;
+    padding: 0.7rem 0.85rem;
+    border-radius: 9px;
+    border: 1px solid var(--line);
+    margin: 0;
+    display: none;
+  }
+
+  .status[data-kind="error"] {
+    display: block; color: var(--danger); border-color: var(--danger);
+  }
+
+  .done {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: clamp(1.5rem, 6vw, 2.25rem);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 0.6rem;
+  }
+
+  .done h2 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 640;
+    letter-spacing: -0.015em;
+  }
+
+  .done p { margin: 0; color: var(--ink-soft); }
+
+  button.again {
+    font: inherit;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--brand-ink);
+    background: transparent;
+    border: 1px solid var(--line-strong);
+    border-radius: 9px;
+    padding: 0.6rem 1rem;
+    min-height: 44px;
+    cursor: pointer;
+    margin-top: 0.5rem;
+  }
+
+  footer {
+    font-size: 0.8125rem;
+    color: var(--ink-faint);
+    text-align: center;
+    margin: 0;
+  }
+
+  .sr-only {
+    position: absolute;
+    width: 1px; height: 1px;
+    padding: 0; margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+
+/* --- Multi-step member registration -------------------------------------- */
+
+.progress {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.progress-track {
+  flex: 1 1 auto;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--field-fill);
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: 999px;
+  background: var(--brand);
+  transition: width 0.3s ease;
+}
+
+.progress-label {
+  flex: 0 0 auto;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.step { display: none; flex-direction: column; gap: 1.15rem; }
+.step[data-current="true"] { display: flex; }
+
+.step-heading {
+  font-size: 1.15rem;
+  font-weight: 640;
+  letter-spacing: -0.015em;
+  margin: 0;
+}
+
+.intro-body { color: var(--ink-soft); margin: 0; }
+.intro-body + .intro-body { margin-top: 0.75rem; }
+
+.name-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+@media (max-width: 26rem) {
+  .name-row { grid-template-columns: 1fr; }
+}
+
+textarea {
+  font: inherit;
+  font-size: 1rem;
+  color: var(--ink);
+  background: var(--field-fill);
+  border: 1px solid var(--field-line);
+  border-radius: 9px;
+  padding: 0.7rem 0.8rem;
+  width: 100%;
+  min-height: 6.5rem;
+  resize: vertical;
+  transition: border-color 0.15s ease;
+}
+
+textarea:hover { border-color: var(--field-line-hover); }
+textarea::placeholder { color: var(--ink-faint); }
+
+textarea:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+  border-color: var(--brand);
+}
+
+textarea[aria-invalid="true"] { border-color: var(--danger); }
+
+/* Segmented choice used for Yes/No, Title, Gender */
+.choice-row { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+
+.choice {
+  flex: 1 1 auto;
+  min-width: 5.5rem;
+  position: relative;
+}
+
+.choice input {
+  position: absolute;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  cursor: pointer;
+}
+
+.choice span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 46px;
+  padding: 0.6rem 0.9rem;
+  border: 1px solid var(--field-line);
+  border-radius: 9px;
+  background: var(--field-fill);
+  font-size: 0.95rem;
+  font-weight: 550;
+  text-align: center;
+  transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+}
+
+.choice input:hover + span { border-color: var(--field-line-hover); }
+
+.choice input:checked + span {
+  border-color: var(--brand);
+  background: color-mix(in srgb, var(--brand) 12%, var(--field-fill));
+  color: var(--brand-ink);
+  font-weight: 640;
+}
+
+.choice input:focus-visible + span {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
+/* Terms list */
+.terms { display: flex; flex-direction: column; gap: 0.6rem; }
+
+.term {
+  display: flex;
+  gap: 0.7rem;
+  align-items: flex-start;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid var(--field-line);
+  border-radius: 9px;
+  background: var(--field-fill);
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.term:hover { border-color: var(--field-line-hover); }
+
+.term input {
+  flex: 0 0 auto;
+  width: 1.1rem;
+  height: 1.1rem;
+  min-height: 0;
+  margin: 0.15rem 0 0;
+  accent-color: var(--brand);
+  cursor: pointer;
+}
+
+.term span { font-size: 0.9rem; line-height: 1.45; color: var(--ink-soft); }
+
+.term:has(input:checked) { border-color: var(--brand); }
+.term:has(input:checked) span { color: var(--ink); }
+.term:has(input:focus-visible) { outline: 2px solid var(--brand); outline-offset: 2px; }
+
+/* Photo upload */
+.upload {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1.5rem 1rem;
+  border: 1.5px dashed var(--line-strong);
+  border-radius: 10px;
+  background: var(--field-fill);
+  cursor: pointer;
+  text-align: center;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.upload:hover { border-color: var(--brand); }
+.upload input { display: none; }
+
+.upload-label { font-size: 0.9rem; font-weight: 600; }
+.upload-hint { font-size: 0.8125rem; color: var(--ink-faint); }
+
+.upload-preview {
+  display: none;
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--brand);
+}
+
+.upload[data-has-file="true"] .upload-preview { display: block; }
+
+/* Signature pad */
+.signature-wrap {
+  position: relative;
+  border: 1px solid var(--field-line);
+  border-radius: 10px;
+  background: var(--field-fill);
+  overflow: hidden;
+}
+
+.signature-wrap[data-invalid="true"] { border-color: var(--danger); }
+
+.signature-pad {
+  display: block;
+  width: 100%;
+  height: 190px;
+  touch-action: none;
+  cursor: crosshair;
+}
+
+.signature-baseline {
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  bottom: 2.6rem;
+  border-bottom: 1px solid var(--line-strong);
+  pointer-events: none;
+}
+
+.signature-caption {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0.9rem;
+  text-align: center;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  pointer-events: none;
+}
+
+.signature-actions { display: flex; justify-content: flex-end; }
+
+button.ghost {
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+  background: transparent;
+  border: 1px solid var(--field-line);
+  border-radius: 8px;
+  padding: 0.4rem 0.8rem;
+  min-height: 38px;
+  cursor: pointer;
+}
+
+button.ghost:hover { border-color: var(--field-line-hover); color: var(--ink); }
+
+/* Step navigation */
+.nav-row { display: flex; gap: 0.6rem; }
+.nav-row .submit { flex: 1 1 auto; }
+
+button.back {
+  font: inherit;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--ink-soft);
+  background: transparent;
+  border: 1px solid var(--field-line);
+  border-radius: 9px;
+  padding: 0.85rem 1.1rem;
+  min-height: 48px;
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+
+button.back:hover { border-color: var(--field-line-hover); color: var(--ink); }
+
+/* Index page */
+.form-links { display: flex; flex-direction: column; gap: 0.85rem; }
+
+.form-link {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 1.15rem 1.25rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.15s ease, transform 0.06s ease;
+}
+
+.form-link:hover { border-color: var(--brand); }
+.form-link:active { transform: translateY(1px); }
+.form-link:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+
+.form-link-title { font-size: 1.05rem; font-weight: 640; letter-spacing: -0.01em; }
+.form-link-desc { font-size: 0.9rem; color: var(--ink-soft); }
+
+/* The hidden attribute must win over the display rules above, otherwise a
+   conditionally-shown field stays visible. */
+[hidden] { display: none !important; }

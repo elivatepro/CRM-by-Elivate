@@ -21,6 +21,10 @@ const teamNameField = process.env.TWENTY_TEAM_NAME_FIELD ?? 'name';
 // linked to the chosen Team, matching the teams <-> opportunities relation
 // already present in the workspace.
 const personObject = process.env.TWENTY_PERSON_OBJECT ?? 'people';
+// Field metadata id of attachments.file, needed by the upload mutation.
+const attachmentFileFieldId =
+  process.env.TWENTY_ATTACHMENT_FILE_FIELD_ID ??
+  '44243f77-42e7-4bb6-83ba-676ba1764d36';
 const opportunityObject = process.env.TWENTY_OPPORTUNITY_OBJECT ?? 'opportunities';
 
 const missingConfig = [];
@@ -214,6 +218,8 @@ const createProspect = async (body) => {
         primaryPhoneCallingCode: NIGERIA_DIAL,
         primaryPhoneCountryCode: 'NG',
       },
+      // Registering later upgrades this same person to Registered.
+      memberStatus: 'PROSPECT',
     }),
   });
 
@@ -238,6 +244,186 @@ const createProspect = async (body) => {
   return { ok: true, status: 201, name };
 };
 
+// --- Member registration ---------------------------------------------------
+
+const TITLES = new Set(['MR', 'MRS', 'MISS']);
+const GENDERS = new Set(['MALE', 'FEMALE']);
+const YES_NO = new Set(['YES', 'NO']);
+const TERMS_COUNT = 7;
+
+// A prospect becomes a member, so an existing person is upgraded rather than
+// duplicated. Match on email first, then on the WhatsApp number.
+const findExistingPerson = async (email, nationalNumber) => {
+  // Twenty supports eq/ilike here but not ieq; ilike gives the
+  // case-insensitive match an email address needs.
+  const lookups = [
+    `filter=emails.primaryEmail[ilike]:${encodeURIComponent(email)}`,
+    `filter=phones.primaryPhoneNumber[eq]:${encodeURIComponent(nationalNumber)}`,
+  ];
+
+  for (const filter of lookups) {
+    try {
+      const payload = await twentyRequest(
+        `${encodeURIComponent(personObject)}?limit=1&${filter}`,
+      );
+      const [match] = extractRecords(payload, personObject);
+      if (match?.id) return match.id;
+    } catch {
+      // A failed lookup should not block registration; fall through to create.
+    }
+  }
+
+  return null;
+};
+
+const uploadAttachment = async (dataUrl, filename, personId) => {
+  const match = /^data:([\w/+.-]+);base64,(.+)$/s.exec(dataUrl ?? '');
+  if (!match) return;
+
+  const [, mimeType, base64] = match;
+  const buffer = Buffer.from(base64, 'base64');
+  if (buffer.length === 0 || buffer.length > 10 * 1024 * 1024) return;
+
+  const form = new FormData();
+  form.append(
+    'operations',
+    JSON.stringify({
+      query:
+        'mutation U($file: Upload!, $fieldMetadataId: String!) { uploadFilesFieldFile(file: $file, fieldMetadataId: $fieldMetadataId) { id path } }',
+      variables: { file: null, fieldMetadataId: attachmentFileFieldId },
+    }),
+  );
+  form.append('map', JSON.stringify({ 0: ['variables.file'] }));
+  form.append('0', new Blob([buffer], { type: mimeType }), filename);
+
+  const uploadResponse = await fetch(`${apiUrl}/metadata`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${apiKey}` },
+    body: form,
+  });
+
+  const uploaded = await uploadResponse.json().catch(() => ({}));
+  const filePath = uploaded?.data?.uploadFilesFieldFile?.path;
+  if (!filePath) {
+    console.error('[intake] file upload failed', JSON.stringify(uploaded).slice(0, 300));
+    return;
+  }
+
+  await twentyRequest('attachments', {
+    method: 'POST',
+    body: JSON.stringify({
+      name: filename,
+      fullPath: filePath,
+      targetPersonId: personId,
+    }),
+  });
+};
+
+const registerMember = async (body) => {
+  const firstName = clean(body.firstName, 80);
+  const lastName = clean(body.lastName, 80);
+  const email = clean(body.email, 200).toLowerCase();
+  const whatsapp = normalizeNigerianMobile(body.whatsapp);
+  const title = clean(body.title, 10).toUpperCase();
+  const gender = clean(body.gender, 10).toUpperCase();
+  const dateOfBirth = clean(body.dateOfBirth, 20);
+  const training = clean(body.trainingCommitment, 5).toUpperCase();
+
+  const errors = {};
+  if (firstName.length < 2) errors.firstName = 'Enter your first name.';
+  if (lastName.length < 2) errors.lastName = 'Enter your last name.';
+  if (!isEmail(email)) errors.email = 'Enter a valid email address.';
+  if (!whatsapp) errors.phone = 'Enter a valid Nigerian WhatsApp number.';
+  if (!TITLES.has(title)) errors.title = 'Choose a title.';
+  if (!GENDERS.has(gender)) errors.gender = 'Choose a gender.';
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateOfBirth)) errors.dateOfBirth = 'Enter your date of birth.';
+  if (!YES_NO.has(training)) errors.trainingCommitment = 'Answer the training question.';
+  if (!clean(body.addressStreet, 200)) errors.addressStreet = 'Enter your street address.';
+  if (!clean(body.addressCity, 100)) errors.addressCity = 'Enter your city.';
+  if (!clean(body.addressState, 100)) errors.addressState = 'Enter your state.';
+  if (!clean(body.addressCountry, 100)) errors.addressCountry = 'Enter your country.';
+  if (!clean(body.occupation, 2000)) errors.occupation = 'Tell us what you do for work.';
+  if (!clean(body.sponsor, 120)) errors.sponsor = 'Enter your sponsor.';
+  if (!clean(body.upline, 120)) errors.upline = 'Enter your upline.';
+
+  const accepted = Array.isArray(body.termsAccepted) ? body.termsAccepted : [];
+  if (accepted.filter(Boolean).length !== TERMS_COUNT) {
+    errors.terms = 'You must accept every term to continue.';
+  }
+
+  if (!/^data:image\/[\w+.-]+;base64,/.test(body.signature ?? '')) {
+    errors.signature = 'Please sign to confirm your commitment.';
+  }
+
+  if (Object.keys(errors).length > 0) {
+    return { ok: false, status: 400, errors };
+  }
+
+  const now = new Date().toISOString();
+  const record = {
+    name: { firstName, lastName },
+    emails: { primaryEmail: email },
+    phones: {
+      primaryPhoneNumber: whatsapp.slice(NIGERIA_DIAL.length),
+      primaryPhoneCallingCode: NIGERIA_DIAL,
+      primaryPhoneCountryCode: 'NG',
+    },
+    title,
+    gender,
+    dateOfBirth,
+    residentialAddress: {
+      addressStreet1: clean(body.addressStreet, 200),
+      addressCity: clean(body.addressCity, 100),
+      addressState: clean(body.addressState, 100),
+      addressCountry: clean(body.addressCountry, 100),
+    },
+    occupation: clean(body.occupation, 2000),
+    priorExperience: clean(body.priorExperience, 2000),
+    sponsor: clean(body.sponsor, 120),
+    upline: clean(body.upline, 120),
+    trainingCommitment: training,
+    memberStatus: 'REGISTERED',
+    termsAcceptedAt: now,
+    registeredAt: now,
+  };
+
+  const existingId = await findExistingPerson(
+    email,
+    whatsapp.slice(NIGERIA_DIAL.length),
+  );
+
+  let personId = existingId;
+
+  if (existingId) {
+    await twentyRequest(`${encodeURIComponent(personObject)}/${existingId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(record),
+    });
+  } else {
+    const created = await twentyRequest(encodeURIComponent(personObject), {
+      method: 'POST',
+      body: JSON.stringify(record),
+    });
+    personId =
+      created?.data?.createPerson?.id ?? created?.data?.id ?? created?.id;
+  }
+
+  // Files are best-effort: a storage failure must not discard a completed
+  // registration, so failures are logged rather than thrown.
+  if (personId) {
+    try {
+      await uploadAttachment(body.signature, `signature-${lastName}.png`, personId);
+      if (body.photo) {
+        await uploadAttachment(body.photo, `photo-${lastName}.jpg`, personId);
+      }
+    } catch (error) {
+      console.error('[intake] attachment step failed:', error.message);
+    }
+  }
+
+  return { ok: true, status: 201, upgraded: Boolean(existingId), firstName };
+};
+
 const routes = {
   'GET /healthz': async (_request, response) => {
     sendJson(response, 200, {
@@ -253,6 +439,29 @@ const routes = {
     } catch (error) {
       sendJson(response, error.statusCode ?? 502, {
         error: 'Could not load teams from the CRM.',
+      });
+    }
+  },
+
+  'POST /api/members': async (request, response) => {
+    let body;
+    try {
+      body = await readJsonBody(request);
+    } catch (error) {
+      return sendJson(response, error.statusCode ?? 400, {
+        error: error.statusCode === 413 ? 'Request too large.' : 'Invalid request.',
+      });
+    }
+
+    try {
+      const result = await registerMember(body);
+      if (!result.ok) {
+        return sendJson(response, result.status, { errors: result.errors });
+      }
+      sendJson(response, 201, { ok: true });
+    } catch (error) {
+      sendJson(response, error.statusCode ?? 502, {
+        error: 'Could not complete your registration. Please try again.',
       });
     }
   },
@@ -282,9 +491,11 @@ const routes = {
 };
 
 const staticFiles = {
-  '/': { file: 'prospect.html', type: 'text/html; charset=utf-8' },
+  '/': { file: 'index.html', type: 'text/html; charset=utf-8' },
   '/prospect': { file: 'prospect.html', type: 'text/html; charset=utf-8' },
+  '/member': { file: 'member.html', type: 'text/html; charset=utf-8' },
   '/elivate-mark.png': { file: 'elivate-mark.png', type: 'image/png' },
+  '/form.css': { file: 'form.css', type: 'text/css; charset=utf-8' },
 };
 
 const serveStatic = async (entry, response) => {
