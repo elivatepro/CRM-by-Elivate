@@ -1,4 +1,6 @@
 import { createServer } from 'node:http';
+import { sendMail } from './email/smtp.mjs';
+import { applicationReceived, welcome, memberIdOnly } from './email/templates.mjs';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -30,6 +32,34 @@ const pickupOrderObject = process.env.TWENTY_PICKUP_ORDER_OBJECT ?? 'pickupOrder
 
 // Records created through the forms are attributed to this workspace member,
 // so the CRM shows a person rather than the API key's name.
+// Outgoing mail. Without these the forms still work; they simply do not send.
+const smtp = {
+  host: process.env.EMAIL_SMTP_HOST ?? '',
+  port: Number(process.env.EMAIL_SMTP_PORT ?? 587),
+  user: process.env.EMAIL_SMTP_USER ?? '',
+  password: process.env.EMAIL_SMTP_PASSWORD ?? '',
+  from: process.env.EMAIL_FROM_ADDRESS ?? '',
+  fromName: process.env.EMAIL_FROM_NAME ?? 'Elivate Network',
+};
+const emailBcc = (process.env.EMAIL_BCC ?? '').split(',').map((x) => x.trim()).filter(Boolean);
+const markUrl = process.env.EMAIL_MARK_URL ?? 'https://forms.elivate.network/elivate-mark.png';
+const emailEnabled = Boolean(smtp.host && smtp.user && smtp.password && smtp.from);
+
+if (!emailEnabled) {
+  console.warn('[intake] SMTP is not configured; no member emails will be sent.');
+}
+
+const deliver = async (to, message) => {
+  if (!emailEnabled) return false;
+  try {
+    await sendMail({ ...smtp, to, bcc: emailBcc, ...message });
+    return true;
+  } catch (error) {
+    console.error(`[intake] email to ${to} failed:`, error.message);
+    return false;
+  }
+};
+
 const recordAuthorId = process.env.TWENTY_RECORD_AUTHOR_ID ?? '';
 const recordAuthorName = process.env.TWENTY_RECORD_AUTHOR_NAME ?? '';
 
@@ -499,7 +529,9 @@ const registerMember = async (body) => {
     sponsor: clean(body.sponsor, 120),
     upline: clean(body.upline, 120),
     trainingCommitment: training,
-    memberStatus: 'REGISTERED',
+    // An application is not an approval: a member stays pending until someone
+    // moves them to Registered in the CRM, which is what sends the welcome.
+    memberStatus: 'PENDING',
     termsAcceptedAt: now,
     registeredAt: now,
     ...createdBy(),
@@ -558,6 +590,18 @@ const registerMember = async (body) => {
       }
     } catch (error) {
       console.error('[intake] attachment step failed:', error.message);
+    }
+  }
+
+  // Acknowledge the application. Delivery is best effort: a mail failure must
+  // not discard a registration that is already saved.
+  if (personId && email) {
+    const sent = await deliver(email, applicationReceived({ firstName, markUrl }));
+    if (sent) {
+      await twentyRequest(`${encodeURIComponent(personObject)}/${personId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ applicationEmailSentAt: new Date().toISOString() }),
+      }).catch(() => {});
     }
   }
 
@@ -628,6 +672,77 @@ const submitPickupOrder = async (body) => {
   });
 
   return { ok: true, status: 201, linked: Boolean(personId) };
+};
+
+// --- Approval watcher ------------------------------------------------------
+
+// Approval happens in the CRM, which cannot call this service, so the welcome
+// email is driven by watching for members who are Registered but have not been
+// welcomed yet. The sent-at stamp is what stops a second send.
+const WATCH_INTERVAL_MS = Number(process.env.APPROVAL_POLL_MS ?? 60_000);
+
+let welcomeScanRunning = false;
+
+const sendPendingWelcomes = async () => {
+  if (!emailEnabled || missingConfig.length > 0) return;
+  if (welcomeScanRunning) return;
+  welcomeScanRunning = true;
+
+  try {
+    await scanForApprovals();
+  } finally {
+    welcomeScanRunning = false;
+  }
+};
+
+const scanForApprovals = async () => {
+
+  let members;
+  try {
+    const payload = await twentyRequest(
+      `${encodeURIComponent(personObject)}?limit=60` +
+        `&filter=memberStatus[eq]:REGISTERED,welcomeEmailSentAt[is]:NULL`,
+    );
+    members = extractRecords(payload, personObject);
+  } catch (error) {
+    console.error('[intake] approval watch failed:', error.message);
+    return;
+  }
+
+  for (const member of members) {
+    const email = member?.emails?.primaryEmail;
+    const memberId = member?.memberId;
+    const firstName = member?.name?.firstName || 'there';
+
+    // Without an id there is nothing useful to send, and without an address
+    // there is nowhere to send it.
+    if (!email || !memberId) continue;
+
+    // Claim the member first. Sending takes seconds, and a second pass that
+    // started meanwhile would otherwise send the same welcome again.
+    try {
+      await twentyRequest(`${encodeURIComponent(personObject)}/${member.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ welcomeEmailSentAt: new Date().toISOString() }),
+      });
+    } catch (error) {
+      console.error('[intake] could not claim welcome:', error.message);
+      continue;
+    }
+
+    const sent = await deliver(email, welcome({ firstName, memberId, markUrl }));
+
+    if (sent) {
+      console.log(`[intake] welcomed ${memberId} (${email})`);
+    } else {
+      // Delivery failed, so release the claim and let the next pass retry.
+      await twentyRequest(`${encodeURIComponent(personObject)}/${member.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ welcomeEmailSentAt: null }),
+      }).catch(() => {});
+      console.error(`[intake] welcome for ${memberId} failed, will retry`);
+    }
+  }
 };
 
 const routes = {
@@ -823,4 +938,14 @@ const server = createServer(async (request, response) => {
 
 server.listen(port, '0.0.0.0', () => {
   console.log(`[intake] listening on ${port}`);
+
+  // Approval happens in the CRM, so the welcome email is driven by watching
+  // for members who have been approved but not yet welcomed.
+  if (emailEnabled) {
+    const watch = () => sendPendingWelcomes().catch((error) =>
+      console.error('[intake] approval watch failed:', error.message));
+    setTimeout(watch, 5_000).unref();
+    setInterval(watch, WATCH_INTERVAL_MS).unref();
+    console.log(`[intake] watching for approvals every ${WATCH_INTERVAL_MS / 1000}s`);
+  }
 });

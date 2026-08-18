@@ -62,6 +62,18 @@ The form's Team dropdown is populated from the **Team** object in the CRM, so
 adding or renaming a team in Twenty changes the form with no redeploy. Teams
 with an empty name are skipped.
 
+### Member emails
+
+A registration is not an approval. Submitting the form saves the member as
+**Pending Approval** and sends an application-received email. Moving them to
+**Registered** in the CRM is the approval, and that sends the welcome email
+carrying their member ID and the three getting-started steps.
+
+The CRM cannot call this service, so approval is noticed by polling: the
+service looks for members who are Registered but have no welcome stamp. The
+stamp is written before the message is sent, so a slow send cannot be picked
+up twice, and is cleared again if delivery fails so the next pass retries.
+
 ### Member IDs
 
 Registration assigns every member an `ELV-XXX` identifier, three random digits,
