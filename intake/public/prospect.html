@@ -57,14 +57,6 @@
       </div>
 
       <div class="field">
-        <label for="email">Email <span class="req" aria-hidden="true">*</span></label>
-        <input id="email" name="email" type="email" required autocomplete="email"
-               inputmode="email" autocapitalize="off" spellcheck="false"
-               aria-describedby="email-err" />
-        <p class="err" id="email-err" role="alert"></p>
-      </div>
-
-      <div class="field">
         <label for="phone">WhatsApp number <span class="req" aria-hidden="true">*</span></label>
         <div class="phone-row" id="phone-row">
           <span class="dial" aria-hidden="true">🇳🇬 +234</span>
@@ -104,7 +96,7 @@
     return !message;
   };
 
-  const clearErrors = () => ['team', 'name', 'email', 'phone'].forEach((id) => setError(id, ''));
+  const clearErrors = () => ['team', 'name', 'phone'].forEach((id) => setError(id, ''));
 
   // --- Custom dropdown -----------------------------------------------------
   const selectRoot = document.getElementById('team-select');
@@ -305,8 +297,6 @@
     phoneInput.value = groups.join(' ').trim();
   });
 
-  const emailOk = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value);
-
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
     clearErrors();
@@ -315,13 +305,11 @@
 
     const teamId = teamField.value;
     const name = document.getElementById('name').value.trim();
-    const email = document.getElementById('email').value.trim();
     const national = nationalDigits(phoneInput.value);
 
     let valid = true;
     valid = setError('team', teamId ? '' : 'Choose a team.') && valid;
     valid = setError('name', name.length >= 2 ? '' : 'Enter the prospect’s full name.') && valid;
-    valid = setError('email', emailOk(email) ? '' : 'Enter a valid email address.') && valid;
 
     let phoneMessage = '';
     if (national.length === 0) phoneMessage = 'Enter their WhatsApp number.';
@@ -338,7 +326,7 @@
       const response = await fetch('/api/prospects', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ teamId, name, email, whatsapp: '+234' + national }),
+        body: JSON.stringify({ teamId, name, whatsapp: '+234' + national }),
       });
 
       if (!response.ok) {

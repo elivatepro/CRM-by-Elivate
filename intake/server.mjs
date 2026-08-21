@@ -246,13 +246,11 @@ const splitName = (fullName) => {
 
 const createProspect = async (body) => {
   const name = clean(body.name, 120);
-  const email = clean(body.email, 200).toLowerCase();
   const teamId = clean(body.teamId, 64);
   const whatsapp = normalizeNigerianMobile(body.whatsapp);
 
   const errors = {};
   if (name.length < 2) errors.name = 'Enter the prospect’s full name.';
-  if (!isEmail(email)) errors.email = 'Enter a valid email address.';
   if (!teamId) errors.team = 'Choose a team.';
   if (!whatsapp) {
     errors.phone = 'Enter a valid Nigerian WhatsApp number.';
@@ -269,7 +267,6 @@ const createProspect = async (body) => {
     method: 'POST',
     body: JSON.stringify({
       name: { firstName, lastName },
-      emails: { primaryEmail: email },
       phones: {
         primaryPhoneNumber: whatsapp.slice(NIGERIA_DIAL.length),
         primaryPhoneCallingCode: NIGERIA_DIAL,
